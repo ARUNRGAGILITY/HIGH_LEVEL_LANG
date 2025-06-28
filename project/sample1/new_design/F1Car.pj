@@ -1,0 +1,29 @@
+template F1Car
+    template vars:
+        - totalCars as int with 0
+
+    template methods:
+        * getTotalCars() returns int
+            return totalCars
+    instance vars:
+        - name as string with ""
+        - model as string with ""
+    instance methods:
+        
+
+    getters setters:
+        - name
+        - model
+
+    constructor:
+        * name, model:
+            totalCars++
+
+
+main
+    print This is a F1 Car class/template
+    create ferrariF1 as F1Car with "Ferrari", "2025"
+    create mercF1 as F1Car with "MercedesBenz", "2025"
+    print Ferrari F1 car details is name: {ferrariF1.getName()}, model: {ferrariF1.getModel()}
+    print MercedesBenz F1 car details is name: {mercF1.getName()}, model: {mercF1.getModel()}
+    print Total Cars available are Total Cars: {F1Car.getTotalCars()}
