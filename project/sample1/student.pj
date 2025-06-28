@@ -1,0 +1,66 @@
+template Student
+    template vars:
+        * totalStudents as int with 0
+        - schoolName as string with "Tech University"
+    
+    instance vars:
+        * studentId as int
+        * name as string
+        - grades as arraylist/double
+        + courses as arraylist/string
+        gpa as double
+    
+    constructor:
+        * Student(studentId, name)
+            this.studentId = studentId
+            this.name = name
+            this.grades = arraylist
+            this.courses = arraylist
+            this.gpa = 0.0
+            totalStudents += 1
+    
+    template methods:
+        * getTotalStudents() returns int
+            return totalStudents
+        
+        * getSchoolName() returns string
+            return schoolName
+    
+    instance methods:
+        * addGrade(course, grade)
+            courses.add(course)
+            grades.add(grade)
+            updateGPA()
+            print f"Added grade {grade} for course {course}"
+        
+        * getGPA() returns double
+            return gpa
+        
+        - updateGPA()
+            if grades.size() == 0:
+                gpa = 0.0
+                return
+            
+            total as double = 0.0
+            for grade in grades:
+                total += grade
+            
+            gpa = total / grades.size()
+        
+        * printTranscript()
+            print f"=== TRANSCRIPT ==="
+            print f"Student: {name} (ID: {studentId})"
+            print f"School: {getSchoolName()}"
+            print f"Courses: {courses.size()}"
+            print f"GPA: {gpa:.2f}"
+            
+            for i in range(courses.size()):
+                courseName as string = courses.get(i)
+                grade as double = grades.get(i)
+                print f"{courseName}: {grade}"
+    
+    getters setters:
+        * name
+        + studentId
+
+
