@@ -1,44 +1,43 @@
-program TestProgram
-    template Person
-        template vars:
-            * int totalPersons = 0
-        
-        instance vars:
-            * String name
-            - int age
-        
-        constructor:
-            * Person(name, age)
-                this.name = name
-                this.age = age
-                totalPersons += 1
-        
-        template methods:
-            * getTotalPersons() -> int
-                return totalPersons
-        
-        instance methods:
-            * greet()
-                print f"Hello, I'm {name} and I'm {age} years old"
-            
-            * isAdult() -> boolean
-                return age >= 18
-        
-        getters setters:
-            * name
-            - age
+template Person
+    template vars:
+        * totalPersons as int with 0
     
-    main
-        create alice as Person with "Alice", 25
-        make bob as Person with "Bob", 17
+    instance vars:
+        * name as string with ""
+        - age as int with 0
+    
+    constructor:
+        * Person(name, age)
+            this.name = name
+            this.age = age
+            totalPersons += 1
+    
+    template methods:
+        * getTotalPersons() returns int
+            return totalPersons
+    
+    instance methods:
+        * greet()
+            print f"Hello, I'm {name} and I'm {age} years old"
         
-        alice.greet()
-        bob.greet()
-        
-        if alice.isAdult():
-            print f"{alice.name} is an adult"
-        
-        if not bob.isAdult():
-            print f"{bob.name} is a minor"
-        
-        print f"Total persons: {Person.getTotalPersons()}"
+        * isAdult() returns boolean
+            return age >= 18
+    
+    getters setters:
+        * name
+        - age
+
+main
+    create alice as Person with "Alice", 25
+    make bob as Person with "Bob", 17
+    
+    alice.greet()
+    bob.greet()
+    
+    if alice.isAdult():
+        print f"{alice.name} is an adult"
+    
+    if ! bob.isAdult():
+        print f"{bob.name} is a minor"
+    
+    print f"Total persons: {Person.getTotalPersons()}"

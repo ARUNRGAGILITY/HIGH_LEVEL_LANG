@@ -190,11 +190,11 @@ class PseudoJavaParser:
                 if method:
                     template.constructors.append(method)
             elif current_section == 'template methods' and self._get_indentation(original_line) >= 8:
-                method, i = self._parse_method(lines, i, is_static=True)
+                method, i = self._parse_method(lines, i, is_static=True, template=template)
                 if method:
                     template.template_methods.append(method)
             elif current_section == 'instance methods' and self._get_indentation(original_line) >= 8:
-                method, i = self._parse_method(lines, i, is_static=False)
+                method, i = self._parse_method(lines, i, is_static=False, template=template)
                 if method:
                     template.instance_methods.append(method)
             elif current_section == 'getters setters' and self._get_indentation(original_line) >= 8:
@@ -397,13 +397,11 @@ class PseudoJavaParser:
             if var.name == var_name:
                 return var.type_
         
-        # If not found, this is an error - require explicit declaration
-        raise ValueError(f"Constructor parameter '{var_name}' does not match any declared variable. "
-                        f"Either declare '{var_name}' as an instance/template variable, "
-                        f"or use explicit type syntax: 'type {var_name}' (e.g., 'string {var_name}')")
+        # If not found, fall back to smart inference instead of error
+        return self._smart_infer_parameter_type(var_name)
     
     def _parse_parameters(self, params_str: str, return_type: str = "void") -> List[Tuple[str, str]]:
-        """Parse method parameters requiring explicit types"""
+        """Parse method parameters with smart context-based type inference"""
         if not params_str.strip():
             return []
         
@@ -415,14 +413,36 @@ class PseudoJavaParser:
                 type_, name = param.split(' ', 1)
                 params.append((name.strip(), self._map_type(type_.strip())))
             else:
-                # No explicit type - this is an error for safety
+                # Use smart type inference based on parameter name
                 param_name = param.strip()
-                raise ValueError(f"Parameter '{param_name}' must have an explicit type declaration. "
-                               f"Use syntax: 'type {param_name}' (e.g., 'string {param_name}', 'int {param_name}')")
+                inferred_type = self._smart_infer_parameter_type(param_name)
+                params.append((param_name, inferred_type))
         
         return params
     
-
+    def _smart_infer_parameter_type(self, param_name: str) -> str:
+        """Smart type inference based on common parameter name patterns"""
+        param_lower = param_name.lower()
+        
+        # String-related parameters
+        if any(word in param_lower for word in ['name', 'title', 'description', 'email', 'address', 'course', 'message', 'text']):
+            return "String"
+        elif param_lower.endswith('id') or param_lower.startswith('id'):
+            return "String"  # Most IDs are strings
+        
+        # Numeric parameters
+        elif any(word in param_lower for word in ['grade', 'score', 'value', 'amount', 'price', 'rate', 'percent', 'weight', 'height']):
+            return "double"
+        elif any(word in param_lower for word in ['count', 'size', 'length', 'index', 'num', 'age', 'year', 'day', 'month']):
+            return "int"
+        
+        # Boolean parameters
+        elif any(word in param_lower for word in ['is', 'has', 'can', 'should', 'enabled', 'active', 'valid']):
+            return "boolean"
+        
+        # Default to String for unknown parameters
+        else:
+            return "String"
     
     def _parse_method_body(self, lines: List[str], start_idx: int) -> Tuple[List[str], int]:
         """Parse method body with proper brace handling"""
@@ -591,9 +611,10 @@ class PseudoJavaParser:
         """Convert a pseudo-Java statement to Java"""
         statement = statement.strip()
         
-        # Handle object creation with natural language
+        # Handle object creation with natural language - using string concatenation to avoid f-string issues
         for verb in self.object_creation_verbs:
-            pattern = r'{}\s+(\w+)\s+as\s+(\w+)\s+with\s+(.*)'.format(verb)
+            # Pattern for: create alice as Student with "args"
+            pattern = verb + r'\s+(\w+)\s+as\s+(\w+)\s+with\s+(.*)'
             match = re.match(pattern, statement)
             if match:
                 var_name = match.group(1)
@@ -603,7 +624,8 @@ class PseudoJavaParser:
         
         # Handle object creation without arguments
         for verb in self.object_creation_verbs:
-            pattern = r'{}\s+(\w+)\s+as\s+(\w+)\s+with\s*$'.format(verb)
+            # Pattern for: create alice as Student with
+            pattern = verb + r'\s+(\w+)\s+as\s+(\w+)\s+with\s*$'
             match = re.match(pattern, statement)
             if match:
                 var_name = match.group(1)
@@ -624,9 +646,13 @@ class PseudoJavaParser:
             else:
                 return f"System.out.println({content});"
         
-        # Handle variable declarations with enhanced syntax
-        if '=' in statement and not any(op in statement for op in ['==', '!=', '<=', '>=']):
+        # Handle variable declarations with enhanced syntax (only for NEW variables with 'as' keyword)
+        if ' as ' in statement and '=' in statement and not any(op in statement for op in ['==', '!=', '<=', '>=']):
             return self._convert_variable_declaration(statement)
+        
+        # Handle simple assignments (this.field = value, field = value, etc.)
+        if '=' in statement and not any(op in statement for op in ['==', '!=', '<=', '>=']):
+            return self._convert_simple_assignment(statement)
         
         # Handle if statements
         if statement.startswith('if '):
@@ -658,6 +684,11 @@ class PseudoJavaParser:
         
         return statement
     
+    def _convert_simple_assignment(self, statement: str) -> str:
+        """Convert simple assignment statements (not variable declarations)"""
+        # This handles assignments like: this.field = value, field = value, etc.
+        return statement + ';'
+    
     def _convert_arraylist_assignment(self, statement: str) -> str:
         """Convert arraylist assignments like 'this.grades = arraylist' to proper Java"""
         parts = statement.split('=', 1)
@@ -684,8 +715,8 @@ class PseudoJavaParser:
                     # Default to String for unknown cases
                     return f"{left_side} = new ArrayList<String>();"
             
-        # If not an arraylist assignment, fall back to regular variable declaration conversion
-        return self._convert_variable_declaration(statement)
+        # If not an arraylist assignment, this is a simple assignment
+        return statement + ";"
     
     def _convert_fstring_print(self, statement: str) -> str:
         """Convert f-string print to Java String.format"""
@@ -823,8 +854,6 @@ class PseudoJavaParser:
                                f"Use 'name as type = value' instead of implicit typing")
             return statement + ';'
     
-
-    
     def _convert_if_statement(self, statement: str) -> str:
         """Convert if statement"""
         condition = statement[3:].rstrip(':')
@@ -885,8 +914,6 @@ class PseudoJavaParser:
         """Convert switch statement"""
         variable = statement[7:].rstrip(':')
         return f"switch ({variable}) {{"
-    
-
     
     def _map_type(self, type_str: str) -> str:
         """Map pseudo-Java types to Java types"""
@@ -1340,7 +1367,7 @@ def test_parser():
         - schoolName as string with "Tech University"
         
     instance vars:
-        * studentId as string
+        * studentId as int
         * name as string
         - grades as arraylist/double
         + courses as arraylist/string
@@ -1363,7 +1390,7 @@ def test_parser():
             return schoolName
             
     instance methods:
-        * addGrade(course, grade)
+        * addGrade(string course, double grade)
             courses.add(course)
             grades.add(grade)
             updateGPA()

@@ -1,0 +1,19 @@
+template LaunchStudent
+main
+    print f"Welcome to {Student.getSchoolName()}"
+    
+    create alice as Student with "S001", "Alice Johnson"
+    make bob as Student with "S002", "Bob Smith"
+    
+    alice.addGrade("Math", 92.5)
+    alice.addGrade("Science", 88.0)
+    alice.addGrade("English", 95.0)
+    
+    bob.addGrade("Math", 78.5)
+    bob.addGrade("Science", 82.0)
+    bob.addGrade("History", 90.0)
+    
+    alice.printTranscript()
+    bob.printTranscript()
+    
+    print f"Total students: {Student.getTotalStudents()}"
