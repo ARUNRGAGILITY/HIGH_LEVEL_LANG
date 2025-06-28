@@ -207,7 +207,7 @@ class PseudoJavaParser:
         return template, i
     
     def _parse_variable(self, lines: List[str], start_idx: int, is_static: bool) -> Tuple[Optional[Variable], int]:
-        """Parse a variable declaration requiring explicit type syntax"""
+        """Parse a variable declaration with enhanced syntax"""
         line = lines[start_idx].strip()
         
         # Skip empty lines and comments
@@ -221,7 +221,8 @@ class PseudoJavaParser:
         
         access = AccessModifier(access_char)
         
-        # Parse variable declaration - require explicit "name as type" syntax
+        # Parse variable declaration with enhanced syntax
+        # Handle: name as type with value, name as type, or old syntax
         initial_value = None
         
         if ' with ' in line:
@@ -238,61 +239,71 @@ class PseudoJavaParser:
             var_part = line.strip()
             initial_value = None
         
-        # Require "name as type" syntax
-        if ' as ' not in var_part:
-            raise ValueError(f"Variable declaration '{line}' must use 'name as type' syntax. "
-                           f"Example: 'studentId as int' or 'name as string'")
-        
-        name_part, type_part = var_part.split(' as ', 1)
-        name = name_part.strip()
-        type_ = type_part.strip()
-        
-        # Handle special array syntax like "arraylist/double" or "list/string"
-        if '/' in type_:
-            container_type, element_type = type_.split('/', 1)
-            container_type = container_type.strip().lower()
-            element_type = element_type.strip()
+        # Handle "name as type" syntax
+        if ' as ' in var_part:
+            name_part, type_part = var_part.split(' as ', 1)
+            name = name_part.strip()
+            type_ = type_part.strip()
             
-            # Map container types
-            mapped_container = self._map_type(container_type)
-            mapped_element = self._map_type(element_type)
-            
-            # Convert primitive types to wrapper types for generics
-            if mapped_element == 'int':
-                mapped_element = 'Integer'
-            elif mapped_element == 'double':
-                mapped_element = 'Double'
-            elif mapped_element == 'float':
-                mapped_element = 'Float'
-            elif mapped_element == 'boolean':
-                mapped_element = 'Boolean'
-            elif mapped_element == 'byte':
-                mapped_element = 'Byte'
-            elif mapped_element == 'short':
-                mapped_element = 'Short'
-            elif mapped_element == 'long':
-                mapped_element = 'Long'
-            elif mapped_element == 'char':
-                mapped_element = 'Character'
-            
-            if container_type in ['arraylist', 'list']:
-                type_ = f"ArrayList<{mapped_element}>"
-                # Auto-initialize collections if no initial value provided
-                if not initial_value or initial_value == 'arraylist':
-                    initial_value = f"new ArrayList<{mapped_element}>()"
-            elif container_type in ['map', 'hashmap']:
-                # For maps, assume String key if only one type specified
-                type_ = f"HashMap<String, {mapped_element}>"
-                if not initial_value or initial_value == 'hashmap':
-                    initial_value = f"new HashMap<String, {mapped_element}>()"
-            elif container_type in ['set', 'hashset']:
-                type_ = f"HashSet<{mapped_element}>"
-                if not initial_value or initial_value == 'hashset':
-                    initial_value = f"new HashSet<{mapped_element}>()"
+            # Handle special array syntax like "arraylist/double" or "list/string"
+            if '/' in type_:
+                container_type, element_type = type_.split('/', 1)
+                container_type = container_type.strip().lower()
+                element_type = element_type.strip()
+                
+                # Map container types
+                mapped_container = self._map_type(container_type)
+                mapped_element = self._map_type(element_type)
+                
+                # Convert primitive types to wrapper types for generics
+                if mapped_element == 'int':
+                    mapped_element = 'Integer'
+                elif mapped_element == 'double':
+                    mapped_element = 'Double'
+                elif mapped_element == 'float':
+                    mapped_element = 'Float'
+                elif mapped_element == 'boolean':
+                    mapped_element = 'Boolean'
+                elif mapped_element == 'byte':
+                    mapped_element = 'Byte'
+                elif mapped_element == 'short':
+                    mapped_element = 'Short'
+                elif mapped_element == 'long':
+                    mapped_element = 'Long'
+                elif mapped_element == 'char':
+                    mapped_element = 'Character'
+                
+                if container_type in ['arraylist', 'list']:
+                    type_ = f"ArrayList<{mapped_element}>"
+                    # Auto-initialize collections if no initial value provided
+                    if not initial_value or initial_value == 'arraylist':
+                        initial_value = f"new ArrayList<{mapped_element}>()"
+                elif container_type in ['map', 'hashmap']:
+                    # For maps, assume String key if only one type specified
+                    type_ = f"HashMap<String, {mapped_element}>"
+                    if not initial_value or initial_value == 'hashmap':
+                        initial_value = f"new HashMap<String, {mapped_element}>()"
+                elif container_type in ['set', 'hashset']:
+                    type_ = f"HashSet<{mapped_element}>"
+                    if not initial_value or initial_value == 'hashset':
+                        initial_value = f"new HashSet<{mapped_element}>()"
+                else:
+                    type_ = f"{mapped_container}<{mapped_element}>"
             else:
-                type_ = f"{mapped_container}<{mapped_element}>"
+                type_ = self._map_type(type_)
         else:
-            type_ = self._map_type(type_)
+            # Old syntax or type inference
+            if ' ' in var_part:
+                type_, name = var_part.split(' ', 1)
+                type_ = self._map_type(type_)
+            else:
+                # Type inference needed
+                if initial_value:
+                    type_ = self._infer_type(initial_value)
+                    name = var_part
+                else:
+                    type_ = "Object"
+                    name = var_part
         
         return Variable(
             name=name,
@@ -397,13 +408,11 @@ class PseudoJavaParser:
             if var.name == var_name:
                 return var.type_
         
-        # If not found, this is an error - require explicit declaration
-        raise ValueError(f"Constructor parameter '{var_name}' does not match any declared variable. "
-                        f"Either declare '{var_name}' as an instance/template variable, "
-                        f"or use explicit type syntax: 'type {var_name}' (e.g., 'string {var_name}')")
+        # If not found, fall back to inference
+        return self._infer_parameter_type(var_name)
     
     def _parse_parameters(self, params_str: str, return_type: str = "void") -> List[Tuple[str, str]]:
-        """Parse method parameters requiring explicit types"""
+        """Parse method parameters with improved type inference"""
         if not params_str.strip():
             return []
         
@@ -411,18 +420,59 @@ class PseudoJavaParser:
         for param in params_str.split(','):
             param = param.strip()
             if ' ' in param:
-                # Explicit type given: "type name"
                 type_, name = param.split(' ', 1)
                 params.append((name.strip(), self._map_type(type_.strip())))
             else:
-                # No explicit type - this is an error for safety
+                # Improved type inference based on parameter name and context
                 param_name = param.strip()
-                raise ValueError(f"Parameter '{param_name}' must have an explicit type declaration. "
-                               f"Use syntax: 'type {param_name}' (e.g., 'string {param_name}', 'int {param_name}')")
+                inferred_type = self._infer_parameter_type(param_name, return_type)
+                params.append((param_name, inferred_type))
         
         return params
     
-
+    def _infer_parameter_type(self, param_name: str, return_type: str = "void") -> str:
+        """Infer parameter type based on name patterns"""
+        param_lower = param_name.lower()
+        
+        # String-related parameters (prioritize these first and be more specific)
+        if any(word in param_lower for word in ['name', 'title', 'description', 'email', 'address', 'course']):
+            return "String"
+        elif 'studentid' in param_lower or 'student_id' in param_lower:
+            return "String"  # Student IDs are typically strings
+        elif param_lower.endswith('id') and len(param_lower) > 2:
+            # If it's a longer ID like "studentId", "userId", etc., treat as String
+            return "String"
+        elif param_lower == 'id':
+            # Only simple "id" might be int
+            return "int"
+        
+        # Number-related parameters
+        elif any(word in param_lower for word in ['num', 'count', 'size', 'length', 'index']):
+            return "int"
+        elif any(word in param_lower for word in ['amount', 'price', 'value', 'rate', 'percent', 'grade', 'score']):
+            return "double"
+        elif any(word in param_lower for word in ['age', 'year', 'day', 'month']):
+            return "int"
+        
+        # Math-related parameters  
+        elif any(word in param_lower for word in ['a', 'b', 'x', 'y', 'base', 'exponent', 'power']):
+            return "double"
+        
+        # Boolean-related parameters
+        elif any(word in param_lower for word in ['is', 'has', 'can', 'should', 'flag', 'enabled']):
+            return "boolean"
+        
+        # Collection-related parameters
+        elif any(word in param_lower for word in ['list', 'array', 'collection']):
+            return "ArrayList<String>"
+        
+        # If return type gives us a hint
+        elif return_type in ['int', 'double', 'float', 'long']:
+            return return_type
+        
+        # Default fallback - most parameters are Strings
+        else:
+            return "String"
     
     def _parse_method_body(self, lines: List[str], start_idx: int) -> Tuple[List[str], int]:
         """Parse method body with proper brace handling"""
@@ -743,11 +793,23 @@ class PseudoJavaParser:
             return f'System.out.println("{format_str}");'
     
     def _convert_variable_declaration(self, statement: str) -> str:
-        """Convert variable declaration requiring explicit syntax"""
+        """Convert variable declaration with enhanced syntax"""
         if statement.startswith('var '):
-            # Type inference not allowed for safety
-            raise ValueError(f"Variable declaration '{statement}' must use explicit type syntax. "
-                           f"Use 'name as type' instead of 'var name = value'")
+            # Type inference
+            parts = statement[4:].split('=', 1)
+            var_name = parts[0].strip()
+            value = parts[1].strip() if len(parts) > 1 else None
+            
+            if value:
+                # Enhanced type inference for method calls
+                if '.' in value and '(' in value and ')' in value:
+                    # This looks like a method call - infer type from method name and context
+                    java_type = self._infer_method_call_type(value)
+                else:
+                    java_type = self._infer_type(value)
+                return f"{java_type} {var_name} = {value};"
+            else:
+                return f"Object {var_name};"
         elif ' as ' in statement:
             # New syntax: name as type = value OR name as type with value
             if ' = ' in statement:
@@ -817,13 +879,34 @@ class PseudoJavaParser:
                     return f"{java_type} {name};"
             
         else:
-            # Old syntax - require explicit types
-            if '=' in statement and not any(op in statement for op in ['==', '!=', '<=', '>=']):
-                raise ValueError(f"Variable declaration '{statement}' must use explicit type syntax. "
-                               f"Use 'name as type = value' instead of implicit typing")
+            # Explicit type (old syntax)
             return statement + ';'
     
-
+    def _infer_method_call_type(self, method_call: str) -> str:
+        """Infer type from method call"""
+        method_call = method_call.strip()
+        
+        # Look for common method patterns
+        if '.add(' in method_call or '.subtract(' in method_call or '.multiply(' in method_call:
+            return "double"  # Math operations typically return double
+        elif '.divide(' in method_call:
+            return "double"  # Division always returns double
+        elif '.power(' in method_call:
+            return "double"  # Power operations return double
+        elif '.size(' in method_call or '.length(' in method_call:
+            return "int"  # Size/length methods return int
+        elif '.isEmpty(' in method_call or '.contains(' in method_call:
+            return "boolean"  # Boolean methods
+        elif '.get(' in method_call:
+            if 'Name' in method_call or 'String' in method_call:
+                return "String"  # getName() type methods
+            else:
+                return "double"  # Assume numeric for grades/scores
+        elif '.toString(' in method_call:
+            return "String"
+        
+        # Default fallback
+        return "String"  # For most method calls, default to String
     
     def _convert_if_statement(self, statement: str) -> str:
         """Convert if statement"""
@@ -886,7 +969,28 @@ class PseudoJavaParser:
         variable = statement[7:].rstrip(':')
         return f"switch ({variable}) {{"
     
-
+    def _infer_type(self, value: str) -> str:
+        """Infer Java type from value"""
+        value = value.strip()
+        
+        if value.startswith('"') and value.endswith('"'):
+            return "String"
+        elif value.startswith("'") and value.endswith("'"):
+            return "String"
+        elif value in ['true', 'false']:
+            return "boolean"
+        elif '.' in value:
+            try:
+                float(value)
+                return "double"
+            except ValueError:
+                return "String"
+        else:
+            try:
+                int(value)
+                return "int"
+            except ValueError:
+                return "String"
     
     def _map_type(self, type_str: str) -> str:
         """Map pseudo-Java types to Java types"""
