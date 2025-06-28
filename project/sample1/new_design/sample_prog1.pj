@@ -1,0 +1,3 @@
+template BMWCar
+main
+    print This is a base class

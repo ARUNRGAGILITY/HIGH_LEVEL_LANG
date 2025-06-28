@@ -1,0 +1,27 @@
+design Car
+    design vars:
+        - totalCars as int with 0
+    design methods:
+        * getCarCount() returns int
+            return totalCars
+    instance vars:
+        name as string with ""
+        model as string with ""
+    constructor:
+        * Car(name):
+            this.name = name
+            totalCars++
+        * Car(name, model):
+            this.name = name
+            this.model = model
+            totalCars++
+    
+    
+    
+main
+    print This is a car class!
+    print Total {Car.getCarCount()} cars at the begining
+    create toyotaCar as Car with "Toyota"
+    create bmwCar as Car with "BMW"
+    create hondaCar as Car with "Honda", "Honda"
+    print Total {Car.getCarCount()} car(s) got created

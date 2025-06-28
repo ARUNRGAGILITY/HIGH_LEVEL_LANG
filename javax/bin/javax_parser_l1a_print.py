@@ -1,24 +1,3 @@
-# ============================================================================
-# PSEUDO JAVA LANGUAGE SYNONYMS CONFIGURATION
-# ============================================================================
-# You can customize these synonyms to match your team's preferred terminology
-# Add or remove synonyms as needed - all are equivalent and can be mixed freely
-
-TEMPLATE_SYNONYMS = ['template', 'blueprint', 'design', 'class']
-ABSTRACT_SYNONYMS = ['abstract', 'contract', 'basic', 'base', 'must-do']
-INHERITANCE_SYNONYMS = ['extends', 'inherits', 'is-a']
-IMPLEMENTATION_SYNONYMS = ['implements', 'can', 'can-do', 'capable']
-ABSTRACT_METHODS_SYNONYMS = ['abstract methods', 'must-do methods']
-
-# Usage Examples:
-# - template Student          vs  blueprint Student        vs  class Student
-# - abstract template Animal  vs  contract template Animal vs  basic template Animal
-# - extends Animal            vs  inherits Animal          vs  is-a Animal  
-# - implements Flyable        vs  can Flyable              vs  capable Flyable
-# - abstract methods:         vs  must-do methods:
-
-# ============================================================================
-
 import re
 import textwrap
 from typing import List, Dict, Tuple, Optional
@@ -58,29 +37,9 @@ class Template:
     template_methods: List[Method]
     instance_methods: List[Method]
     getters_setters: List[Tuple[str, AccessModifier]]
-    # New APIE features
-    is_abstract: bool = False
-    is_interface: bool = False
-    extends: Optional[str] = None
-    implements: List[str] = None
-    abstract_methods: List[Method] = None
-    
-    def __post_init__(self):
-        if self.implements is None:
-            self.implements = []
-        if self.abstract_methods is None:
-            self.abstract_methods = []
 
 class PseudoJavaParser:
-    def __init__(self, 
-                 template_synonyms=None,
-                 abstract_synonyms=None, 
-                 inheritance_synonyms=None,
-                 implementation_synonyms=None,
-                 abstract_methods_synonyms=None):
-        """
-        Initialize parser with configurable synonyms
-        """
+    def __init__(self):
         self.access_modifiers = {
             '*': 'public',
             '-': 'private',
@@ -106,87 +65,8 @@ class PseudoJavaParser:
             'hashset': 'HashSet'
         }
         
-        # Use provided synonyms or fall back to global configuration
-        self.template_synonyms = template_synonyms or TEMPLATE_SYNONYMS
-        self.abstract_synonyms = abstract_synonyms or ABSTRACT_SYNONYMS
-        self.inheritance_synonyms = inheritance_synonyms or INHERITANCE_SYNONYMS
-        self.implementation_synonyms = implementation_synonyms or IMPLEMENTATION_SYNONYMS
-        self.abstract_methods_synonyms = abstract_methods_synonyms or ABSTRACT_METHODS_SYNONYMS
-        
         self.object_creation_verbs = ['create', 'make', 'spawn', 'build', 'initialize']
     
-    def _map_type(self, type_str: str) -> str:
-        """Map pseudo-Java types to Java types"""
-        return self.type_mapping.get(type_str.lower(), type_str)
-    
-    def _is_template_keyword(self, word: str) -> bool:
-        """Check if a word is any of the template synonyms"""
-        return word.lower() in self.template_synonyms
-    
-    def _extract_template_name_from_line(self, line: str) -> Optional[str]:
-        """Extract template name from any template synonym line with inheritance support"""
-        line = line.strip()
-        for synonym in self.template_synonyms:
-            # Handle inheritance syntax: template Student extends Person implements Comparable
-            pattern = f'^{synonym}\\s+(\\w+)'
-            match = re.match(pattern, line, re.IGNORECASE)
-            if match:
-                return match.group(1)
-        return None
-    
-    def _parse_inheritance_from_line(self, line: str) -> Tuple[bool, bool, Optional[str], List[str]]:
-        """Parse inheritance information from template declaration line"""
-        line = line.strip()
-        is_abstract = False
-        is_interface = False
-        extends = None
-        implements = []
-        
-        # Check for abstract/contract/basic/base/must-do keywords
-        for keyword in self.abstract_synonyms:
-            if line.startswith(f'{keyword} '):
-                is_abstract = True
-                line = line[len(keyword):].strip()  # Remove keyword
-                break
-        
-        # Check for interface keyword
-        for synonym in self.template_synonyms:
-            if line.startswith(f'interface '):
-                is_interface = True
-                line = line[10:].strip()  # Remove 'interface '
-                break
-        
-        # Parse extends/inherits/is-a clause
-        for keyword in self.inheritance_synonyms:
-            if f' {keyword} ' in line:
-                parts = line.split(f' {keyword} ', 1)
-                line = parts[0].strip()
-                remainder = parts[1].strip()
-                
-                # Check if there's also implements/can/can-do/capable
-                for impl_keyword in self.implementation_synonyms:
-                    if f' {impl_keyword} ' in remainder:
-                        extend_parts = remainder.split(f' {impl_keyword} ', 1)
-                        extends = extend_parts[0].strip()
-                        implements_part = extend_parts[1].strip()
-                        implements = [iface.strip() for iface in implements_part.split(',')]
-                        break
-                else:
-                    extends = remainder
-                break
-        
-        # Parse implements/can/can-do/capable clause (without extends/inherits/is-a)
-        if not extends:
-            for keyword in self.implementation_synonyms:
-                if f' {keyword} ' in line:
-                    parts = line.split(f' {keyword} ', 1)
-                    line = parts[0].strip()
-                    implements_part = parts[1].strip()
-                    implements = [iface.strip() for iface in implements_part.split(',')]
-                    break
-        
-        return is_abstract, is_interface, extends, implements
-
     def parse_program(self, source_code: str) -> str:
         """Parse the entire pseudo-Java program and convert to Java"""
         lines = source_code.strip().split('\n')
@@ -194,10 +74,9 @@ class PseudoJavaParser:
         # Check what type of syntax we're dealing with
         first_line = lines[0].strip()
         
-        # Check if first line starts with any template synonym
-        template_name = self._extract_template_name_from_line(first_line)
-        if template_name:
+        if first_line.startswith('template '):
             # Template-only syntax - use template name as program name
+            template_name = re.match(r'template\s+(\w+)', first_line).group(1)
             program_name = template_name
             start_idx = 0
         elif first_line.startswith('program '):
@@ -220,12 +99,11 @@ class PseudoJavaParser:
                     program_name = "MainProgram"
                     start_idx = 0
                     break
-                else:
-                    template_name = self._extract_template_name_from_line(stripped)
-                    if template_name:
-                        program_name = template_name
-                        start_idx = 0
-                        break
+                elif stripped.startswith('template '):
+                    template_name = re.match(r'template\s+(\w+)', stripped).group(1)
+                    program_name = template_name
+                    start_idx = 0
+                    break
         
         # Parse templates and main method
         templates = []
@@ -236,8 +114,7 @@ class PseudoJavaParser:
         while i < len(lines):
             line = lines[i].strip()
             
-            # Check if line starts with any template synonym
-            if self._extract_template_name_from_line(line):
+            if line.startswith('template '):
                 template, i = self._parse_template(lines, i)
                 templates.append(template)
             elif line == 'main':
@@ -263,25 +140,9 @@ class PseudoJavaParser:
         return len(line) - len(line.lstrip())
     
     def _parse_template(self, lines: List[str], start_idx: int) -> Tuple[Template, int]:
-        """Parse a template definition (supports all synonyms and inheritance)"""
+        """Parse a template definition"""
         template_line = lines[start_idx].strip()
-        template_name = self._extract_template_name_from_line(template_line)
-        
-        if not template_name:
-            raise ValueError(f"Could not extract template name from line: {template_line}")
-        
-        # Parse inheritance information
-        is_abstract, is_interface, extends, implements = self._parse_inheritance_from_line(template_line)
-        
-        # Extract the keyword used (template, blueprint, design, class)
-        template_keyword = None
-        for synonym in self.template_synonyms:
-            if synonym.lower() in template_line.lower():
-                template_keyword = synonym
-                break
-        
-        if not template_keyword:
-            template_keyword = 'template'  # fallback
+        template_name = re.match(r'template\s+(\w+)', template_line).group(1)
         
         template = Template(
             name=template_name,
@@ -290,12 +151,7 @@ class PseudoJavaParser:
             constructors=[],
             template_methods=[],
             instance_methods=[],
-            getters_setters=[],
-            is_abstract=is_abstract,
-            is_interface=is_interface,
-            extends=extends,
-            implements=implements,
-            abstract_methods=[]
+            getters_setters=[]
         )
         
         i = start_idx + 1
@@ -311,7 +167,7 @@ class PseudoJavaParser:
             
             # Check if we've reached the end of the template
             if original_line and not original_line.startswith('    ') and not original_line.startswith('\t'):
-                if self._extract_template_name_from_line(line) or line == 'main':
+                if line.startswith('template ') or line == 'main':
                     break
             
             # Determine current section (these are at 4-space indentation level)
@@ -320,12 +176,8 @@ class PseudoJavaParser:
                 i += 1
                 continue
             
-            # Parse based on current section with flexible keyword matching
-            static_vars_patterns = [f'{template_keyword} vars', 'template vars', 'static vars', 'class vars']
-            static_methods_patterns = [f'{template_keyword} methods', 'template methods', 'static methods', 'class methods']
-            
             # Parse based on current section (content at 8-space indentation level)
-            if current_section in static_vars_patterns and self._get_indentation(original_line) >= 8:
+            if current_section == 'template vars' and self._get_indentation(original_line) >= 8:
                 var, i = self._parse_variable(lines, i, is_static=True)
                 if var:
                     template.template_vars.append(var)
@@ -337,7 +189,7 @@ class PseudoJavaParser:
                 method, i = self._parse_method(lines, i, is_constructor=True, template=template)
                 if method:
                     template.constructors.append(method)
-            elif current_section in static_methods_patterns and self._get_indentation(original_line) >= 8:
+            elif current_section == 'template methods' and self._get_indentation(original_line) >= 8:
                 method, i = self._parse_method(lines, i, is_static=True, template=template)
                 if method:
                     template.template_methods.append(method)
@@ -345,10 +197,6 @@ class PseudoJavaParser:
                 method, i = self._parse_method(lines, i, is_static=False, template=template)
                 if method:
                     template.instance_methods.append(method)
-            elif current_section in self.abstract_methods_synonyms and self._get_indentation(original_line) >= 8:
-                method, i = self._parse_abstract_method(lines, i, template=template)
-                if method:
-                    template.abstract_methods.append(method)
             elif current_section == 'getters setters' and self._get_indentation(original_line) >= 8:
                 getter_setter, i = self._parse_getter_setter(lines, i)
                 if getter_setter:
@@ -471,51 +319,14 @@ class PseudoJavaParser:
         
         # Parse method signature
         if is_constructor:
-            # Check for new simplified constructor syntax vs old explicit syntax
-            if ':' in line and not line.endswith(')') and not re.match(r'.*\w+\s*\([^)]*\)\s*:', line):
-                # New simplified syntax: parameters followed by colon (e.g., "name:" or "name, model:")
-                # Make sure it's NOT the old syntax like "Car(name):"
-                params_str = line.rstrip(':').strip()
-                method_name = template.name if template else "Constructor"
-                return_type = "void"
-                
-                # Parse parameters and generate automatic assignments
-                if template:
-                    parameters = self._parse_parameters_from_declared_types(params_str, template)
-                else:
-                    parameters = self._parse_method_parameters(params_str)
-                
-                # Generate automatic this.param = param assignments
-                auto_body = []
-                for param_name, param_type in parameters:
-                    auto_body.append(f"this.{param_name} = {param_name};")
-                
-                # Parse any additional custom body
-                custom_body, end_idx = self._parse_method_body(lines, start_idx + 1)
-                
-                # Combine auto-generated and custom body
-                full_body = auto_body + custom_body
-                
-                return Method(
-                    name=method_name,
-                    parameters=parameters,
-                    return_type=return_type,
-                    access=access,
-                    body=full_body,
-                    is_static=is_static,
-                    is_constructor=is_constructor
-                ), end_idx
-            else:
-                # Original constructor syntax: * ClassName(params) OR * ClassName(params):
-                # Handle both with and without trailing colon
-                line_for_parsing = line.rstrip(':') if line.endswith(':') else line
-                match = re.match(r'(\w+)\s*\((.*?)\)', line_for_parsing)
-                if not match:
-                    return None, start_idx + 1
-                
-                method_name = match.group(1)
-                params_str = match.group(2)
-                return_type = "void"
+            # Constructor: * ClassName(params)
+            match = re.match(r'(\w+)\s*\((.*?)\)', line)
+            if not match:
+                return None, start_idx + 1
+            
+            method_name = match.group(1)
+            params_str = match.group(2)
+            return_type = "void"
         else:
             # Method: * methodName(params) returns returnType OR * methodName(params) -> returnType
             if ' returns ' in line:
@@ -541,15 +352,8 @@ class PseudoJavaParser:
         else:
             parameters = self._parse_method_parameters(params_str)
         
-        # Parse method body (for original syntax or non-constructor methods)
-        if not (is_constructor and ':' in lines[start_idx].strip() and 
-                not lines[start_idx].strip().endswith(')') and 
-                not re.match(r'.*\w+\s*\([^)]*\)\s*:', lines[start_idx].strip())):
-            body, end_idx = self._parse_method_body(lines, start_idx + 1)
-        else:
-            # Already handled in new constructor syntax above
-            body = []
-            end_idx = start_idx + 1
+        # Parse method body
+        body, end_idx = self._parse_method_body(lines, start_idx + 1)
         
         return Method(
             name=method_name,
@@ -633,58 +437,12 @@ class PseudoJavaParser:
                         f"Either declare '{param_name}' as a variable in the template, "
                         f"or use explicit type syntax: 'type {param_name}' (e.g., 'string {param_name}')")
     
-    def _parse_abstract_method(self, lines: List[str], start_idx: int, template: Template = None) -> Tuple[Optional[Method], int]:
-        """Parse an abstract method definition (no body)"""
-        line = lines[start_idx].strip()
-        
-        # Skip empty lines and comments
-        if not line or line.startswith('//'):
-            return None, start_idx + 1
-        
-        # Parse access modifier (* - +)
-        access_char = line[0] if line[0] in ['*', '-', '+'] else ''
-        if access_char:
-            line = line[1:].strip()
-        
-        access = AccessModifier(access_char)
-        
-        # Parse method signature - handle both 'returns' and '->' syntax
-        if ' returns ' in line:
-            method_part, return_type = line.split(' returns ', 1)
-            return_type = return_type.strip()
-        elif ' -> ' in line:
-            method_part, return_type = line.split(' -> ', 1)
-            return_type = return_type.strip()
-        else:
-            method_part = line
-            return_type = "void"
-        
-        match = re.match(r'(\w+)\s*\((.*?)\)', method_part)
-        if not match:
-            return None, start_idx + 1
-        
-        method_name = match.group(1)
-        params_str = match.group(2)
-        
-        # Parse parameters
-        if template:
-            parameters = self._parse_parameters_from_declared_types(params_str, template)
-        else:
-            parameters = self._parse_method_parameters(params_str)
-        
-        # Abstract methods have no body
-        return Method(
-            name=method_name,
-            parameters=parameters,
-            return_type=self._map_type(return_type),
-            access=access,
-            body=[],  # No body for abstract methods
-            is_static=False,
-            is_constructor=False
-        ), start_idx + 1
+    def _parse_constructor_parameters(self, params_str: str, template: Template) -> List[Tuple[str, str]]:
+        """Parse constructor parameters using actual variable types from template"""
+        return self._parse_parameters_from_declared_types(params_str, template)
     
-    def _parse_method_parameters(self, params_str: str) -> List[Tuple[str, str]]:
-        """Parse method parameters with explicit typing"""
+    def _parse_constructor_parameters(self, params_str: str, template: Template) -> List[Tuple[str, str]]:
+        """Parse constructor parameters using actual variable types from template"""
         if not params_str.strip():
             return []
         
@@ -692,23 +450,40 @@ class PseudoJavaParser:
         for param in params_str.split(','):
             param = param.strip()
             if ' ' in param:
-                # Explicit type given: "type name"
-                parts = param.split()
-                if len(parts) >= 2:
-                    type_ = parts[0]
-                    name = ' '.join(parts[1:])  # Handle names with spaces
-                    params.append((name.strip(), self._map_type(type_.strip())))
-                else:
-                    # Single word - assume it's a name and require explicit type
-                    raise ValueError(f"Parameter '{param}' requires explicit type. Use 'type name' syntax.")
+                # Explicit type given: "int studentId"
+                type_, name = param.split(' ', 1)
+                params.append((name.strip(), self._map_type(type_.strip())))
             else:
-                # No explicit type - this is an error for standalone methods
-                raise ValueError(f"Parameter '{param}' requires explicit type. Use 'type name' syntax (e.g., 'string {param}').")
+                # No explicit type - look up from template variables
+                param_name = param.strip()
+                param_type = self._lookup_variable_type(param_name, template)
+                params.append((param_name, param_type))
         
         return params
     
+    def _lookup_variable_type(self, var_name: str, template: Template) -> str:
+        """Look up the actual type of a variable from the template - only declared types"""
+        # Check instance variables first
+        for var in template.instance_vars:
+            if var.name == var_name:
+                return var.type_
+        
+        # Check template variables (static)
+        for var in template.template_vars:
+            if var.name == var_name:
+                return var.type_
+        
+        # If not found, this is an error - require explicit declaration
+        raise ValueError(f"Constructor parameter '{var_name}' does not match any declared variable. "
+                        f"Either declare '{var_name}' as an instance/template variable, "
+                        f"or use explicit type syntax: 'type {var_name}' (e.g., 'string {var_name}')")
+    
+
+    
+
+    
     def _parse_method_body(self, lines: List[str], start_idx: int) -> Tuple[List[str], int]:
-        """Parse method body with proper brace handling and section detection"""
+        """Parse method body with proper brace handling"""
         body = []
         i = start_idx
         expected_indent = None
@@ -717,52 +492,33 @@ class PseudoJavaParser:
         
         while i < len(lines):
             line = lines[i]
-            stripped_line = line.strip()
-            
-            # Skip empty lines
-            if not stripped_line:
-                i += 1
-                continue
-            
-            # Check if this is a section header (ends with : and at 4-space indent)
-            current_indent = self._get_indentation(line)
-            if (stripped_line.endswith(':') and current_indent == 4 and 
-                stripped_line[:-1].strip() in ['instance vars', 'constructor', 'instance methods', 
-                                               'getters setters'] + 
-                [f'{kw} vars' for kw in self.template_synonyms] +
-                [f'{kw} methods' for kw in self.template_synonyms] +
-                self.abstract_methods_synonyms):
-                # This is a section header - end the method body here
-                break
-            
-            # Check if we've reached another template or main
-            if (current_indent == 0 and 
-                (self._extract_template_name_from_line(stripped_line) or stripped_line == 'main')):
-                break
             
             # Determine expected indentation from first non-empty line
-            if expected_indent is None:
-                expected_indent = current_indent
+            if line.strip() and expected_indent is None:
+                expected_indent = self._get_indentation(line)
             
             # If line is not indented enough, we've reached the end of the method
-            if current_indent < expected_indent:
-                break
+            if line.strip():
+                current_indent = self._get_indentation(line)
+                if expected_indent is not None and current_indent < expected_indent:
+                    break
                 
-            # Check if we need to close braces due to decreased indentation
-            while indent_stack and current_indent <= indent_stack[-1]:
-                body.append('}')
-                indent_stack.pop()
-                if brace_stack:
-                    brace_stack.pop()
+                # Check if we need to close braces due to decreased indentation
+                while indent_stack and current_indent <= indent_stack[-1]:
+                    body.append('}')
+                    indent_stack.pop()
+                    if brace_stack:
+                        brace_stack.pop()
             
-            # Convert pseudo-Java to Java
-            java_line = self._convert_statement_to_java(stripped_line)
-            body.append(java_line)
-            
-            # Track braces for proper closing
-            if java_line.endswith('{'):
-                brace_stack.append('open')
-                indent_stack.append(current_indent)
+            if line.strip():  # Skip empty lines
+                # Convert pseudo-Java to Java
+                java_line = self._convert_statement_to_java(line.strip())
+                body.append(java_line)
+                
+                # Track braces for proper closing
+                if java_line.endswith('{'):
+                    brace_stack.append('open')
+                    indent_stack.append(self._get_indentation(line))
             
             i += 1
         
@@ -815,7 +571,7 @@ class PseudoJavaParser:
         params_str = match.group(2)
         
         # Parse parameters
-        parameters = self._parse_method_parameters(params_str)
+        parameters = self._parse_parameters(params_str, return_type)
         
         # Parse method body
         body, end_idx = self._parse_method_body(lines, start_idx + 1)
@@ -1050,8 +806,6 @@ class PseudoJavaParser:
             return f'System.out.println(String.format("{format_str}"{args_str}));'
         else:
             return f'System.out.println("{format_str}");'
-    
-    def _convert_fstring_print(self, statement: str) -> str:
         """Convert f-string print to Java String.format"""
         # Extract the f-string content
         match = re.match(r'print f"(.*?)"', statement)
@@ -1248,6 +1002,10 @@ class PseudoJavaParser:
         variable = statement[7:].rstrip(':')
         return f"switch ({variable}) {{"
     
+    def _map_type(self, type_str: str) -> str:
+        """Map pseudo-Java types to Java types"""
+        return self.type_mapping.get(type_str.lower(), type_str)
+    
     def _generate_java_code(self, program_name: str, templates: List[Template], main_body: List[str], standalone_methods: List[Method] = None) -> str:
         """Generate complete Java code with smart template merging"""
         if standalone_methods is None:
@@ -1423,66 +1181,41 @@ class PseudoJavaParser:
         return lines
     
     def _generate_template_class(self, template: Template) -> List[str]:
-        """Generate Java class from template with inheritance support"""
+        """Generate Java class from template"""
         lines = []
         
-        # Build class declaration with inheritance
-        class_declaration = []
+        lines.append(f"class {template.name} {{")
         
-        # Add abstract/interface modifiers
-        if template.is_interface:
-            class_declaration.append("interface")
-        elif template.is_abstract:
-            class_declaration.append("abstract class")
-        else:
-            class_declaration.append("class")
-        
-        class_declaration.append(template.name)
-        
-        # Add extends/inherits clause
-        if template.extends:
-            class_declaration.append("extends")
-            class_declaration.append(template.extends)
-        
-        # Add implements/can clause
-        if template.implements:
-            class_declaration.append("implements")
-            class_declaration.append(", ".join(template.implements))
-        
-        lines.append(" ".join(class_declaration) + " {")
-        
-        # For interfaces, skip instance variables and constructors
-        if not template.is_interface:
-            # Generate template variables (static)
-            for var in template.template_vars:
-                access_str = self.access_modifiers[var.access.value]
-                initial = f" = {var.initial_value}" if var.initial_value else ""
-                
-                if access_str:
-                    lines.append(f"    {access_str} static {var.type_} {var.name}{initial};")
-                else:
-                    lines.append(f"    static {var.type_} {var.name}{initial};")
+        # Generate template variables (static)
+        for var in template.template_vars:
+            access_str = self.access_modifiers[var.access.value]
+            initial = f" = {var.initial_value}" if var.initial_value else ""
             
-            if template.template_vars:
-                lines.append("")
+            if access_str:
+                lines.append(f"    {access_str} static {var.type_} {var.name}{initial};")
+            else:
+                lines.append(f"    static {var.type_} {var.name}{initial};")
+        
+        if template.template_vars:
+            lines.append("")
+        
+        # Generate instance variables
+        for var in template.instance_vars:
+            access_str = self.access_modifiers[var.access.value]
+            initial = f" = {var.initial_value}" if var.initial_value else ""
             
-            # Generate instance variables
-            for var in template.instance_vars:
-                access_str = self.access_modifiers[var.access.value]
-                initial = f" = {var.initial_value}" if var.initial_value else ""
-                
-                if access_str:
-                    lines.append(f"    {access_str} {var.type_} {var.name}{initial};")
-                else:
-                    lines.append(f"    {var.type_} {var.name}{initial};")
-            
-            if template.instance_vars:
-                lines.append("")
-            
-            # Generate constructors
-            for constructor in template.constructors:
-                lines.extend(self._generate_method_code(constructor, template.name))
-                lines.append("")
+            if access_str:
+                lines.append(f"    {access_str} {var.type_} {var.name}{initial};")
+            else:
+                lines.append(f"    {var.type_} {var.name}{initial};")
+        
+        if template.instance_vars:
+            lines.append("")
+        
+        # Generate constructors
+        for constructor in template.constructors:
+            lines.extend(self._generate_method_code(constructor, template.name))
+            lines.append("")
         
         # Generate template methods (static)
         for method in template.template_methods:
@@ -1494,18 +1227,12 @@ class PseudoJavaParser:
             lines.extend(self._generate_method_code(method))
             lines.append("")
         
-        # Generate abstract methods
-        for method in template.abstract_methods:
-            lines.extend(self._generate_abstract_method_code(method))
-            lines.append("")
-        
-        # Generate getters and setters (not for interfaces)
-        if not template.is_interface:
-            for var_name, access in template.getters_setters:
-                var = self._find_variable(template, var_name)
-                if var:
-                    lines.extend(self._generate_getter_setter(var, access))
-                    lines.append("")
+        # Generate getters and setters
+        for var_name, access in template.getters_setters:
+            var = self._find_variable(template, var_name)
+            if var:
+                lines.extend(self._generate_getter_setter(var, access))
+                lines.append("")
         
         lines.append("}")
         
@@ -1544,26 +1271,6 @@ class PseudoJavaParser:
         
         return lines
     
-    def _generate_abstract_method_code(self, method: Method) -> List[str]:
-        """Generate Java abstract method code (no body)"""
-        lines = []
-        
-        access_str = self.access_modifiers[method.access.value]
-        
-        # Build parameter list
-        params = ", ".join([f"{param_type} {param_name}" for param_name, param_type in method.parameters])
-        
-        # Build method signature
-        return_type = method.return_type if method.return_type != "void" else "void"
-        if access_str:
-            signature = f"{access_str} abstract {return_type} {method.name}({params});"
-        else:
-            signature = f"abstract {return_type} {method.name}({params});"
-        
-        lines.append(f"    {signature}")
-        
-        return lines
-    
     def _generate_getter_setter(self, var: Variable, access: AccessModifier) -> List[str]:
         """Generate getter and setter methods"""
         lines = []
@@ -1596,89 +1303,6 @@ class PseudoJavaParser:
             if var.name == var_name:
                 return var
         return None
-
-
-def test_parser():
-    """Test the parser with your exact design Car example and backward compatibility"""
-    
-    # Test your exact design Car example
-    print(f"\n{'='*60}")
-    print("Testing YOUR EXACT DESIGN CAR EXAMPLE:")
-    print(f"{'='*60}")
-    
-    your_car_test = '''design Car
-    design vars:
-        - totalCars as int with 0
-    design methods:
-        * getCarCount() returns int
-            return totalCars
-    instance vars:
-        name as string with ""
-        model as string with ""
-    constructor:
-        * Car(name):
-            this.name = name
-            totalCars++
-        * Car(name, model):
-            this.name = name
-            this.model = model
-            totalCars++
-    
-main
-    print This is a car class!
-    print Total {{Car.getCarCount()}} cars at the begining
-    create toyotaCar as Car with "Toyota"
-    create bmwCar as Car with "BMW"
-    create hondaCar as Car with "Honda", "Honda"
-    print Total {{Car.getCarCount()}} car(s) got created
-'''
-    
-    parser = PseudoJavaParser()
-    try:
-        java_code = parser.parse_program(your_car_test)
-        print("✅ Successfully parsed YOUR EXACT DESIGN CAR example")
-        print("Generated Java Code:")
-        print("-" * 50)
-        print(java_code)
-    except Exception as e:
-        print(f"❌ Error with your design Car example: {e}")
-        import traceback
-        traceback.print_exc()
-    
-    # Test backward compatibility
-    print(f"\n{'='*60}")
-    print("Testing BACKWARD COMPATIBILITY:")
-    print(f"{'='*60}")
-    
-    backward_test = '''template Student
-    template vars:
-        * totalStudents as int with 0
-        
-    instance vars:
-        * studentId as string
-        * name as string
-        
-    constructor:
-        * Student(studentId, name):
-            this.studentId = studentId
-            this.name = name
-            totalStudents++
-
-main
-    create alice as Student with "S001", "Alice Johnson"
-    print Total students: {{Student.totalStudents}}
-'''
-    
-    try:
-        java_code = parser.parse_program(backward_test)
-        print("✅ Successfully parsed BACKWARD COMPATIBILITY test")
-        print("Generated Java Code:")
-        print("-" * 50)
-        print(java_code)
-    except Exception as e:
-        print(f"❌ Error with backward compatibility: {e}")
-        import traceback
-        traceback.print_exc()
 
 
 def main():
@@ -1736,12 +1360,11 @@ Examples:
         pj_parser = PseudoJavaParser()
         java_code = pj_parser.parse_program(pseudo_code)
         
-        # Extract program name - handle all syntax types including new synonyms
+        # Extract program name - handle all syntax types
         first_line = pseudo_code.strip().split('\n')[0]
-        template_name = pj_parser._extract_template_name_from_line(first_line)
-        if template_name:
-            # Template-only syntax (with any synonym) - use template name
-            program_name = template_name
+        if first_line.startswith('template '):
+            # Template-only syntax - use template name
+            program_name = re.match(r'template\s+(\w+)', first_line).group(1)
         elif first_line.startswith('program '):
             # Traditional syntax with program declaration
             program_name = pj_parser._extract_program_name(first_line)
@@ -1756,10 +1379,10 @@ Examples:
                 if stripped == 'main':
                     program_name = "MainProgram"
                     break
-                else:
-                    template_name = pj_parser._extract_template_name_from_line(stripped)
-                    if template_name:
-                        program_name = template_name
+                elif stripped.startswith('template '):
+                    template_match = re.match(r'template\s+(\w+)', stripped)
+                    if template_match:
+                        program_name = template_match.group(1)
                         break
         
         # Determine output file
@@ -1822,57 +1445,104 @@ Examples:
         sys.exit(1)
 
 
-if __name__ == "__main__":
-    main()
-
-# works with 
-"""
-blueprint House
+def test_parser():
+    """Test the parser with enhanced syntax"""
+    
+    sample_code = '''template Student
+    template vars:
+        * totalStudents as int with 0
+        - schoolName as string with "Tech University"
+        
     instance vars:
-        - name as string with ""
-    blueprint vars:
-        - totalHouses as int with 0
-    blueprint methods:
-        * getTotalHouses() returns int
-            return totalHouses
+        * studentId as int
+        * name as string
+        - grades as arraylist/double
+        + courses as arraylist/string
+        gpa as double
+        
     constructor:
-        * name:
-            totalHouses++
-main
-    print This is a House Class!
-    print Initially these are the houses {House.getTotalHouses()}
-    create house1 as House with "Alex's House"
-    print Currently there are total {House.getTotalHouses()} House(s)
-
-
-design Car
-    design vars:
-        - totalCars as int with 0
-    design methods:
-        * getCarCount() returns int
-            return totalCars
-    instance vars:
-        - name as string with ""
-        - model as string with ""
-    constructor:
-        * name:
-            totalCars++
-        * name, model:
-            totalCars++
+        * Student(studentId, name)
+            this.studentId = studentId
+            this.name = name
+            this.grades = arraylist
+            this.courses = arraylist
+            this.gpa = 0.0
+            totalStudents += 1
+            
+    template methods:
+        * getTotalStudents() returns int
+            return totalStudents
+            
+        * getSchoolName() returns string
+            return schoolName
+            
+    instance methods:
+        * addGrade(string course, double grade)
+            courses.add(course)
+            grades.add(grade)
+            updateGPA()
+            print f"Added grade {grade} for course {course}"
+            
+        * getGPA() returns double
+            return gpa
+            
+        - updateGPA()
+            if grades.size() == 0:
+                gpa = 0.0
+                return
+                
+            total as double = 0.0
+            for grade in grades:
+                total += grade
+                
+            gpa = total / grades.size()
+            
+        * printTranscript()
+            print f"=== TRANSCRIPT ==="
+            print f"Student: {name} (ID: {studentId})"
+            print f"School: {getSchoolName()}"
+            print f"Courses: {courses.size()}"
+            print f"GPA: {gpa:.2f}"
+            
+            for i in range(courses.size()):
+                courseName as string = courses.get(i)
+                grade as double = grades.get(i)
+                print f"{courseName}: {grade}"
     
     getters setters:
         * name
-        * model
-    
-main
-    print This is a car class!
-    print Total {Car.getCarCount()} cars at the begining
-    create toyotaCar as Car with "Toyota"
-    create bmwCar as Car with "BMW"
-    create hondaCar as Car with "Honda", "Honda"
-    print =====================================================
-    print Total {Car.getCarCount()} car(s) got created
-    print Honda Car: {hondaCar.getName()} {hondaCar.getModel()}
-    print =====================================================
+        + studentId
 
-"""
+main
+    print f"Welcome to {Student.getSchoolName()}"
+    
+    create alice as Student with "S001", "Alice Johnson"
+    make bob as Student with "S002", "Bob Smith"
+    
+    alice.addGrade("Math", 92.5)
+    alice.addGrade("Science", 88.0)
+    alice.addGrade("English", 95.0)
+    
+    bob.addGrade("Math", 78.5)
+    bob.addGrade("Science", 82.0)
+    bob.addGrade("History", 90.0)
+    
+    alice.printTranscript()
+    bob.printTranscript()
+    
+    print f"Total students: {Student.getTotalStudents()}"
+'''
+    
+    print("Enhanced syntax test:")
+    print("====================")
+    
+    parser = PseudoJavaParser()
+    java_code = parser.parse_program(sample_code)
+    
+    print("Generated Java Code:")
+    print("=" * 50)
+    print(java_code)
+
+
+if __name__ == "__main__":
+    main()

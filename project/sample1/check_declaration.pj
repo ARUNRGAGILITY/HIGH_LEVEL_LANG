@@ -1,0 +1,20 @@
+blueprint Car
+    blueprint vars:
+        - totalCars as int = 0
+    blueprint methods:
+        * getCarCount() returns int
+            return totalCars
+    instance vars:
+        name as string with ""
+    constructor:
+        * Car(name):
+            this.name = name
+            totalCars++
+    
+    
+    
+main
+    print This is a car class!
+    create toyotaCar as Car with "Toyota"
+    create bmwCar as Car with "BMW"
+    print Total {Car.getCarCount()} got created

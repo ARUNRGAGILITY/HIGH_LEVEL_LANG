@@ -1,0 +1,61 @@
+template ShoppingCart
+    instance vars:
+        * items as list/string
+        * prices as list/double
+        * quantity as double
+        * quantities as map/string,int
+        
+    constructor:
+        items = empty list
+        prices = empty list  
+        quantities = empty map
+        
+    instance methods:
+        * addItem(item, price, quantity):
+            if item in items:
+                print Item already exists, updating quantity
+                quantities[item] += quantity
+            else:
+                items add item
+                prices add price
+                quantities[item] = quantity
+                
+        * removeItem(item):
+            if item in items:
+                index as int = items indexOf item
+                items remove index
+                prices remove index
+                quantities remove item
+                
+        * getTotal() returns double
+            total as double = 0.0
+            for i in range(items size):
+                item as string = items[i]
+                price as double = prices[i]
+                quantity as int = quantities[item]
+                total += price * quantity
+            return total
+            
+        * printCart():
+            print === Shopping Cart ===
+            for i in range(items size):
+                item as string = items[i]
+                price as double = prices[i]
+                quantity as int = quantities[item]
+                print {item}: ${price} x {quantity} = ${price * quantity}
+            print Total: ${getTotal()}
+
+main
+    create cart as ShoppingCart with
+    
+    cart addItem("Apple", 1.50, 5)
+    cart addItem("Banana", 0.75, 3)
+    cart addItem("Orange", 2.00, 2)
+    
+    cart printCart()
+    
+    cart addItem("Apple", 1.50, 2)  // Add more apples
+    cart removeItem("Banana")       // Remove bananas
+    
+    print === Updated Cart ===
+    cart printCart()

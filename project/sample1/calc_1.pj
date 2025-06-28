@@ -1,11 +1,11 @@
 template LaunchCalculator
 
 main
-    var a = 10.5
-    var b = 3.2
+    a as double = 10.5
+    b as double = 3.2
     
-    print f"Calculator Demo:"
-    print f"a = {a}, b = {b}"
+    print Calculator Demo:
+    print a = {a}, b = {b}
     
     var sum = Calculator.add(a, b)
     var diff = Calculator.subtract(a, b)
@@ -13,11 +13,11 @@ main
     var quotient = Calculator.divide(a, b)
     var squared = Calculator.power(a, 2)
     
-    print f"Addition: {a} + {b} = {sum}"
-    print f"Subtraction: {a} - {b} = {diff}"
-    print f"Multiplication: {a} * {b} = {product}"
-    print f"Division: {a} / {b} = {quotient:.2f}"
-    print f"Power: {a} ^ 2 = {squared:.2f}"
+    print Addition: {a} + {b} = {sum}
+    print Subtraction: {a} - {b} = {diff}
+    print Multiplication: {a} * {b} = {product}
+    print Division: {a} / {b} = {quotient:.2f}
+    print Power: {a} ^ 2 = {squared:.2f}
     
     var zeroTest = Calculator.divide(a, 0)
-    print f"Division by zero test: {zeroTest}"
+    print Division by zero test: {zeroTest}

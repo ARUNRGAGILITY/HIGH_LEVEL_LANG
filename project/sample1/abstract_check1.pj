@@ -1,0 +1,16 @@
+abstract template Animal
+    instance vars:
+        * name as string
+        * age as int
+        
+    constructor:
+        * name, age:         # Simplified constructor
+            print f"Creating animal: {name}"
+            
+    instance methods:
+        * getNamex() returns string
+            return name
+            
+    abstract methods:      # New section for abstract methods
+        * makeSound() returns string
+        * move() returns string

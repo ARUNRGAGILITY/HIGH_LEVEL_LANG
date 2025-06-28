@@ -1,11 +1,11 @@
-program HelloWorld
-    main
-        print f"Hello, World!"
-        print f"Check this javax"
-        print f"Welcome to Pseudo Java!"
-        
-        var name = "Alice"
-        var age = 25
-        
-        print f"Hello {name}, you are {age} years old"
-        print f"Next year you'll be {age + 1}"
+template HelloWorld
+main
+    print Hello, World!
+    print Check this javax
+    print Welcome to Pseudo Java!
+    
+    name as string = "Alice"
+    age as int = 24
+    
+    print Hello {name}, you are {age} years old
+    print Next year you'll be {age + 1}

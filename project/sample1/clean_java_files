@@ -1,0 +1,5 @@
+#!/bin/bash
+
+echo "Deleting the *.java and *.class files"
+rm *.java
+rm *.class

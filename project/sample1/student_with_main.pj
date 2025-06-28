@@ -31,7 +31,7 @@ template Student
             courses.add(course)
             grades.add(grade)
             updateGPA()
-            print f"Added grade {grade} for course {course}"
+            print Added grade {grade} for course {course}
         
         * getGPA() returns double
             return gpa
@@ -48,16 +48,16 @@ template Student
             gpa = total / grades.size()
         
         * printTranscript()
-            print f"=== TRANSCRIPT ==="
-            print f"Student: {name} (ID: {studentId})"
-            print f"School: {getSchoolName()}"
-            print f"Courses: {courses.size()}"
-            print f"GPA: {gpa:.2f}"
+            print === TRANSCRIPT ===
+            print Student: {name} (ID: {studentId})
+            print School: {getSchoolName()}
+            print Courses: {courses.size()}
+            print GPA: {gpa:.2f}
             
             for i in range(courses.size()):
                 courseName as string = courses.get(i)
                 grade as double = grades.get(i)
-                print f"{courseName}: {grade}"
+                print {courseName}: {grade}
     
     getters setters:
         * name
@@ -65,7 +65,7 @@ template Student
 
 
 main
-    print f"Welcome to {Student.getSchoolName()}"
+    print Welcome to {Student.getSchoolName()}
     
     create alice as Student with "S001", "Alice Johnson"
     make bob as Student with "S002", "Bob Smith"
@@ -81,4 +81,4 @@ main
     alice.printTranscript()
     bob.printTranscript()
     
-    print f"Total students: {Student.getTotalStudents()}"
+    print Total students: {Student.getTotalStudents()}

@@ -1,0 +1,18 @@
+blueprint House
+    instance vars:
+        - name as string with ""
+    blueprint vars:
+        - totalHouses as int with 0
+    blueprint methods:
+        * getTotalHouses() returns int
+            return totalHouses
+    constructor:
+        * name:
+            totalHouses++
+    getters setters:
+        * name
+main
+    print This is a House Class!
+    print Initially these are the houses {House.getTotalHouses()}
+    create house1 as House with "Alex's House"
+    print Currently there are total {House.getTotalHouses()} House(s)

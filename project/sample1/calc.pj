@@ -1,44 +1,28 @@
-template Calculator1
+template Calculator
+    template vars:
+        * a as double
+        * b as double
+        * base as double
+        * exponent as int
+        
     template methods:
-        * add(a, b) -> double
+        * add(a, b) returns double
             return a + b
-        
-        * subtract(a, b) -> double
+            
+        * subtract(a, b) returns double
             return a - b
-        
-        * multiply(a, b) -> double
+            
+        * multiply(a, b) returns double
             return a * b
-        
-        * divide(a, b) -> double
+            
+        * divide(a, b) returns double
             if b == 0:
                 print "Error: Division by zero!"
                 return 0.0
             return a / b
-        
-        * power(base, exponent) -> double
-            var result = 1.0
+            
+        * power(base, exponent) returns double
+            result as double = 1.0
             for i in range(0, exponent):
                 result *= base
             return result
-
-main
-    var a = 10.5
-    var b = 3.2
-    
-    print f"Calculator Demo:"
-    print f"a = {a}, b = {b}"
-    
-    var sum = Calculator.add(a, b)
-    var diff = Calculator.subtract(a, b)
-    var product = Calculator.multiply(a, b)
-    var quotient = Calculator.divide(a, b)
-    var squared = Calculator.power(a, 2)
-    
-    print f"Addition: {a} + {b} = {sum}"
-    print f"Subtraction: {a} - {b} = {diff}"
-    print f"Multiplication: {a} * {b} = {product}"
-    print f"Division: {a} / {b} = {quotient:.2f}"
-    print f"Power: {a} ^ 2 = {squared:.2f}"
-    
-    var zeroTest = Calculator.divide(a, 0)
-    print f"Division by zero test: {zeroTest}"

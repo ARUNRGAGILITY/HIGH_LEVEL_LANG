@@ -1,0 +1,3 @@
+template Check1
+main
+    print This is a test of Check1 class
