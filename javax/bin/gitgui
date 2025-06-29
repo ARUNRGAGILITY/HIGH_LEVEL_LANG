@@ -1,0 +1,129 @@
+# ===== BASH SHELL SCRIPT (git-gui.sh) =====
+#!/bin/bash
+
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON_SCRIPT="$SCRIPT_DIR/git_gui.py"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to print colored output
+print_error() {
+    echo -e "${RED}Error: $1${NC}" >&2
+}
+
+print_success() {
+    echo -e "${GREEN}$1${NC}"
+}
+
+print_warning() {
+    echo -e "${YELLOW}Warning: $1${NC}"
+}
+
+print_info() {
+    echo -e "${BLUE}$1${NC}"
+}
+
+# Function to check if command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# Check if Python script exists
+if [[ ! -f "$PYTHON_SCRIPT" ]]; then
+    print_error "git_gui.py not found in $SCRIPT_DIR"
+    print_error "Please ensure git_gui.py is in the same directory as this script."
+    exit 1
+fi
+
+# Check if Python is installed
+if ! command_exists python3; then
+    if ! command_exists python; then
+        print_error "Python is not installed or not in PATH"
+        print_error "Please install Python 3.x and ensure it's in your system PATH"
+        exit 1
+    else
+        PYTHON_CMD="python"
+    fi
+else
+    PYTHON_CMD="python3"
+fi
+
+# Verify Python version
+PYTHON_VERSION=$($PYTHON_CMD --version 2>&1 | grep -oE '[0-9]+\.[0-9]+')
+MAJOR_VERSION=$(echo $PYTHON_VERSION | cut -d. -f1)
+
+if [[ $MAJOR_VERSION -lt 3 ]]; then
+    print_error "Python 3.x is required. Found Python $PYTHON_VERSION"
+    exit 1
+fi
+
+# Check if Git is installed
+if ! command_exists git; then
+    print_error "Git is not installed or not in PATH"
+    print_error "Please install Git and ensure it's in your system PATH"
+    exit 1
+fi
+
+# Check if tkinter is available
+if ! $PYTHON_CMD -c "import tkinter" 2>/dev/null; then
+    print_error "tkinter is not available"
+    print_error "Please install python3-tk package:"
+    print_error "  Ubuntu/Debian: sudo apt-get install python3-tk"
+    print_error "  CentOS/RHEL: sudo yum install tkinter"
+    print_error "  macOS: tkinter should be included with Python"
+    exit 1
+fi
+
+# Handle command line arguments
+if [[ $# -eq 0 ]]; then
+    # No arguments provided
+    if [[ -d ".git" ]]; then
+        print_success "Starting Git GUI in current directory: $(pwd)"
+    else
+        print_info "Starting Git GUI - you can browse to select a repository"
+    fi
+elif [[ $# -eq 1 ]]; then
+    # One argument provided - should be a directory
+    if [[ -d "$1/.git" ]]; then
+        print_success "Starting Git GUI in directory: $1"
+        cd "$1" || exit 1
+    elif [[ -d "$1" ]]; then
+        print_warning "$1 does not appear to be a git repository"
+        print_info "Starting Git GUI anyway - you can browse to select a repository"
+        cd "$1" || exit 1
+    else
+        print_error "Directory $1 does not exist"
+        exit 1
+    fi
+else
+    # Too many arguments
+    echo "Usage: $0 [directory]"
+    echo "  directory: Optional path to git repository (defaults to current directory)"
+    exit 1
+fi
+
+echo
+print_info "Launching Python Git GUI..."
+print_info "Press Ctrl+C to exit"
+echo
+
+# Set up signal handlers for clean exit
+trap 'echo; print_info "Git GUI interrupted by user"; exit 0' INT TERM
+
+# Run the Python script
+$PYTHON_CMD "$PYTHON_SCRIPT"
+
+EXIT_CODE=$?
+
+if [[ $EXIT_CODE -ne 0 ]]; then
+    echo
+    print_error "Git GUI exited with error code: $EXIT_CODE"
+fi
+
+exit $EXIT_CODE

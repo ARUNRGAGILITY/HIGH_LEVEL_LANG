@@ -349,7 +349,7 @@ class PseudoJavaParser:
                 method, i = self._parse_abstract_method(lines, i, template=template)
                 if method:
                     template.abstract_methods.append(method)
-            elif current_section == 'getters setters' and self._get_indentation(original_line) >= 8:
+            elif current_section == 'getters setters' or 'getters and setters' or 'getters,  setters' or 'setters and getters' or 'setters and getters' and self._get_indentation(original_line) >= 8:
                 getter_setter, i = self._parse_getter_setter(lines, i)
                 if getter_setter:
                     template.getters_setters.append(getter_setter)

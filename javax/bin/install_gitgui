@@ -1,0 +1,65 @@
+
+# ===== INSTALLATION SCRIPT (install.sh) =====
+#!/bin/bash
+
+# Installation script for Git GUI
+INSTALL_DIR="/usr/local/bin"
+SCRIPT_NAME="git-gui"
+
+print_info() {
+    echo -e "\033[0;34m$1\033[0m"
+}
+
+print_success() {
+    echo -e "\033[0;32m$1\033[0m"
+}
+
+print_error() {
+    echo -e "\033[0;31mError: $1\033[0m" >&2
+}
+
+# Check if running as root for system-wide install
+if [[ $EUID -eq 0 ]]; then
+    print_info "Installing Git GUI system-wide to $INSTALL_DIR"
+    
+    # Copy Python script
+    cp git_gui.py "$INSTALL_DIR/"
+    chmod +x "$INSTALL_DIR/git_gui.py"
+    
+    # Copy shell script
+    cp git-gui.sh "$INSTALL_DIR/$SCRIPT_NAME"
+    chmod +x "$INSTALL_DIR/$SCRIPT_NAME"
+    
+    # Update script path in the installed version
+    sed -i "s|SCRIPT_DIR=.*|SCRIPT_DIR=\"$INSTALL_DIR\"|" "$INSTALL_DIR/$SCRIPT_NAME"
+    
+    print_success "Git GUI installed successfully!"
+    print_info "You can now run 'git-gui' from anywhere"
+else
+    # Install to user's local bin directory
+    LOCAL_BIN="$HOME/.local/bin"
+    mkdir -p "$LOCAL_BIN"
+    
+    print_info "Installing Git GUI to user directory: $LOCAL_BIN"
+    
+    # Copy Python script
+    cp git_gui.py "$LOCAL_BIN/"
+    chmod +x "$LOCAL_BIN/git_gui.py"
+    
+    # Copy shell script
+    cp git-gui.sh "$LOCAL_BIN/$SCRIPT_NAME"
+    chmod +x "$LOCAL_BIN/$SCRIPT_NAME"
+    
+    # Update script path in the installed version
+    sed -i "s|SCRIPT_DIR=.*|SCRIPT_DIR=\"$LOCAL_BIN\"|" "$LOCAL_BIN/$SCRIPT_NAME"
+    
+    print_success "Git GUI installed successfully!"
+    print_info "You can now run 'git-gui' from anywhere"
+    print_info "Make sure $LOCAL_BIN is in your PATH"
+    
+    # Check if LOCAL_BIN is in PATH
+    if [[ ":$PATH:" != *":$LOCAL_BIN:"* ]]; then
+        print_info "To add $LOCAL_BIN to your PATH, add this line to your ~/.bashrc or ~/.zshrc:"
+        echo "export PATH=\"\$HOME/.local/bin:\$PATH\""
+    fi
+fi
