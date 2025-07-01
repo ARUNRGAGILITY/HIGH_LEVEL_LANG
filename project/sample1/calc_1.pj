@@ -1,8 +1,8 @@
 template LaunchCalculator
 
 main
-    a as double = 10.53
-    b as double = 3.2
+    a as double with 10.53
+    b as double with 3.2
     
     print Calculator Demo:
     print a = {a}, b = {b}

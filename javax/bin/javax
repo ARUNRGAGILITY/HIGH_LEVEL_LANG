@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Pseudo Java Compiler (pjc) - Linux/Mac Bash Script
-# Usage: pjc [options] input.pj
+# Pseudo Java Compiler (javax) - Linux/Mac Bash Script
+# Usage: javax [options] input.pj
+# Modular Version 2.0
 
 # Colors for output
 RED='\033[0;31m'
@@ -10,10 +11,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Script directory
+# Script directory and parser script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPT_NAME="javax_parser.py"
-PARSER_SCRIPT="$SCRIPT_DIR/$SCRIPT_NAME"
+PARSER_SCRIPT="$SCRIPT_DIR/javax_parser.py"
 
 # Function to print colored output
 print_error() {
@@ -40,7 +40,7 @@ check_python() {
         exit 1
     fi
     
-    # Prefer python3 over python
+    # Prefer python over python
     if command -v python &> /dev/null; then
         PYTHON_CMD="python"
     else
@@ -52,9 +52,39 @@ check_python() {
 check_parser_script() {
     if [[ ! -f "$PARSER_SCRIPT" ]]; then
         print_error "Parser script not found at $PARSER_SCRIPT"
-        echo "Please ensure pseudo_java_parser.py is in the same directory as this script"
+        echo "Please ensure javax_parser.py is in the same directory as this script"
         exit 1
     fi
+}
+
+# Check if modules directory exists
+check_modules() {
+    local modules_dir="$SCRIPT_DIR/modules"
+    if [[ ! -d "$modules_dir" ]]; then
+        print_error "Modules directory not found at $modules_dir"
+        echo "Please ensure the 'modules' directory with all parser modules is present"
+        exit 1
+    fi
+    
+    # Check for essential modules
+    local essential_modules=(
+        "config/synonyms.py"
+        "core/data_structures.py"
+        "core/parser_engine.py"
+        "generators/java_generator.py"
+        "utils/cli.py"
+        "utils/file_handler.py"
+    )
+    
+    for module in "${essential_modules[@]}"; do
+        if [[ ! -f "$modules_dir/$module" ]]; then
+            print_error "Essential module missing: $modules_dir/$module"
+            echo "Please ensure all required modules are present"
+            exit 1
+        fi
+    done
+    
+    print_info "Modular parser structure verified ✓"
 }
 
 # Check for Java compiler if needed
@@ -81,6 +111,7 @@ check_javac() {
 show_help() {
     cat << EOF
 Pseudo Java Compiler (javax) - Convert pseudo-Java to Java
+Modular Version 2.0
 
 Usage: javax [options] input.pj
 
@@ -107,6 +138,15 @@ File Extension:
 Environment Variables:
   JAVAX_VERBOSE=1    Enable verbose output by default
   JAVAX_OUTPUT_DIR   Default output directory
+
+Modular Structure:
+  This version uses a modular architecture with components in:
+  - config/        Configuration and synonyms
+  - core/          Core parsing engine
+  - parsers/       Individual component parsers
+  - generators/    Code generation modules
+  - utils/         Utility functions
+  - tests/         Test modules
 EOF
 }
 
@@ -128,12 +168,45 @@ process_args() {
     echo "${args[@]}"
 }
 
+# Validate installation
+validate_installation() {
+    print_info "Validating Pseudo Java Parser installation..."
+    
+    # Check Python
+    check_python
+    print_info "Python: $PYTHON_CMD ✓"
+    
+    # Check parser script
+    check_parser_script
+    print_info "Main parser script: javax_parser.py ✓"
+    
+    # Check modules
+    check_modules
+    
+    # Test import of essential modules
+    if ! $PYTHON_CMD -c "
+import sys
+import os
+sys.path.insert(0, os.path.join('$SCRIPT_DIR', 'modules'))
+try:
+    from config.synonyms import SynonymConfig
+    from core.parser_engine import PseudoJavaParser
+    from generators.java_generator import JavaCodeGenerator
+    print('Module imports successful ✓')
+except ImportError as e:
+    print(f'Module import error: {e}')
+    exit(1)
+" 2>/dev/null; then
+        print_error "Module validation failed"
+        echo "Some Python modules could not be imported"
+        exit 1
+    fi
+    
+    print_success "Installation validated successfully!"
+}
+
 # Main function
 main() {
-    # Check dependencies
-    check_python
-    check_parser_script
-    
     # Handle no arguments
     if [[ $# -eq 0 ]]; then
         show_help
@@ -151,11 +224,20 @@ main() {
             exit 0
             ;;
         --test)
-            print_info "Running built-in test..."
+            print_info "Running built-in tests..."
             $PYTHON_CMD "$PARSER_SCRIPT" --test
             exit $?
             ;;
+        --validate)
+            validate_installation
+            exit 0
+            ;;
     esac
+    
+    # Check dependencies
+    check_python
+    check_parser_script
+    check_modules
     
     # Check for Java compiler if needed
     check_javac "$@"
@@ -176,7 +258,7 @@ main() {
     fi
     
     # Execute Python parser
-    print_info "Pseudo Java Compiler - Processing..."
+    print_info "Pseudo Java Compiler v2.0 (Modular) - Processing..."
     
     # Use eval to properly handle the processed arguments
     eval "$PYTHON_CMD \"$PARSER_SCRIPT\" $processed_args"

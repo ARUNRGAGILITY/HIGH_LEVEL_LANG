@@ -1,0 +1,6 @@
+#!/bin/bash
+
+echo `pwd`
+echo "Removing the .java and .class files"
+rm *.java
+rm *.class
