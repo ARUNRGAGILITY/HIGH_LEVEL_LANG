@@ -1,0 +1,4 @@
+blueprint Program1
+main
+    print Hello World!
+    print This is a sample Java Program: Program1

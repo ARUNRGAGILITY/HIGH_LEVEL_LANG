@@ -1,0 +1,4 @@
+base template Car
+    template vars
+        * make as string with ""
+        * model as string with ""

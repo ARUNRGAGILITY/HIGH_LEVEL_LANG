@@ -1,0 +1,4 @@
+// Interface definition  
+interface Flyable
+    must-do methods:
+        * fly() returns string

@@ -1,0 +1,20 @@
+template CollectionDemo
+
+main
+    numbers as arraylist/int
+    add 10 to numbers    // [10]
+    add 20 to numbers    // [10, 20]
+    add 30 to numbers    // [10, 20, 30]
+    
+    // Remove by value (removes the number 20)
+    remove value 20 from numbers     // [10, 30]
+    
+    // Remove by index (removes element at index 0, which is 10)
+    remove index 0 from numbers      // [30]
+    
+    print {numbers}
+
+    // Smart default (removes value 30)
+    remove 30 from numbers           // []
+
+    print {numbers}

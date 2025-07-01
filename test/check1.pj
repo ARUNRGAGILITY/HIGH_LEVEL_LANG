@@ -1,0 +1,59 @@
+template GradeBook
+    instance vars:
+        - students as arraylist/string
+        - grades as map/string/arraylist/double
+        - subjects as set/string
+    
+    constructor:
+        * students, grades, subjects:
+    
+    instance methods:
+        * addStudent(name):
+            if not students.contains(name):
+                students.add(name)
+                grades.put(name, arraylist/double)
+                print Added student: {name}
+        
+        * addGrade(student, subject, grade):
+            if not subjects.contains(subject):
+                subjects.add(subject)
+            
+            if grades.containsKey(student):
+                grades.get(student).add(grade)
+                print Added grade {grade:.1f} for {student} in {subject}
+        
+        * getAverage(student) returns double:
+            if grades.containsKey(student):
+                studentGrades as arraylist/double = grades.get(student)
+                if studentGrades.isEmpty():
+                    return 0.0
+                
+                total as double = 0.0
+                for grade in studentGrades:
+                    total = total + grade
+                
+                return total / studentGrades.size()
+            return 0.0
+        
+        * printReport():
+            print === GRADE BOOK REPORT ===
+            print Total students: {students.size()}
+            print Subjects: {subjects.size()}
+            
+            for student in students:
+                average as double = getAverage(student)
+                print {student}: {average:.2f} average
+
+main
+    create gradebook as GradeBook with arraylist/string, map/string/arraylist/double, set/string
+    
+    gradebook.addStudent("Alice")
+    gradebook.addStudent("Bob")
+    gradebook.addStudent("Charlie")
+    
+    gradebook.addGrade("Alice", "Math", 95.5)
+    gradebook.addGrade("Alice", "Science", 88.0)
+    gradebook.addGrade("Bob", "Math", 76.5)
+    gradebook.addGrade("Bob", "Science", 92.0)
+    
+    gradebook.printReport()

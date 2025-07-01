@@ -1,0 +1,68 @@
+template CollectionDemo
+
+main
+    // Create collections
+    numbers as arraylist/int with arraylist
+    names as arraylist/string
+    
+    // Add items
+    add 10 to numbers
+    add 20 to numbers
+    append "Alice" to names
+    append "Bob" to names
+    
+    // Check properties
+    print Size of numbers: {size of numbers}
+    print Length of names: {length of names}
+    print Is empty numbers: {is empty numbers}
+    
+    // Check contents
+    print Contains 10 in numbers: {contains 10 in numbers}
+    print Has "Alice" in names: {has "Alice" in names}
+    
+    // Get items
+    firstNumber as int = get 0 from numbers
+    lastName as string = get item at 1 from names
+    print First number: {firstNumber}
+    print Last name: {lastName}
+    
+    // Set items
+    set 0 in numbers to 100
+    set item at 1 in names to "Charlie"
+    
+    // Insert items
+    insert 5 into numbers at 0
+    
+    // Get first and last
+    print First in numbers: {first in numbers}
+    print Last in names: {last in names}
+    
+    // Find index
+    print Index of 100 in numbers: {index of 100 in numbers}
+    
+    // Collection utilities
+    sort numbers
+    reverse names
+    
+    # Iterate over collections
+    """
+    Multi-line
+    comment
+    CollectionDemo
+    """
+
+    for num in numbers:
+        print Number: {num}
+    
+    for name in each names:
+        print Name: {name}
+    
+    // Remove items
+    print numbers: {numbers}
+    remove index 0 from numbers
+    print numbers: {numbers}
+    remove "Charlie" from names
+    
+    // Clear collection
+    clear numbers
+    print After clearing, size: {size of numbers}

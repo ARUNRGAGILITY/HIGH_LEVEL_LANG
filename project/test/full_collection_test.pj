@@ -1,0 +1,385 @@
+template CollectionsTest
+
+main
+    # ===========================
+    # ARRAYLIST OPERATIONS
+    # ===========================
+    
+    """
+    ArrayList - Dynamic array implementation
+    Allows duplicates, maintains insertion order
+    """
+    
+    # Create and initialize ArrayList
+    numbers as arraylist/int with arraylist
+    fruits as arraylist/string
+    
+    # Add elements
+    add 10 to numbers          # Add to end
+    add 20 to numbers
+    add 30 to numbers
+    append "apple" to fruits   # Append (same as add)
+    append "banana" to fruits
+    append "cherry" to fruits
+    
+    # Insert at specific position
+    insert 5 into numbers at 0    # Insert at beginning
+    insert "orange" into fruits at 1  # Insert at index 1
+    
+    # Access elements
+    firstNum as int = get 0 from numbers
+    lastFruit as string = get item at 2 from fruits
+    
+    print First number: {firstNum}    # Should be 5
+    print Fruit at index 2: {lastFruit}
+    
+    # Modify elements
+    set 0 in numbers to 15           # Change first element
+    set item at 1 in fruits to "mango"  # Change element at index 1
+    
+    # Check properties
+    print ArrayList size: {size of numbers}
+    print Is empty: {is empty numbers}
+    print Contains 20: {contains 20 in numbers}
+    print Has apple: {has "apple" in fruits}
+    
+    # Find elements
+    print Index of 30: {index of 30 in numbers}
+    print First element: {first in numbers}
+    print Last element: {last in fruits}
+    
+    # Remove elements
+    remove value 20 from numbers     # Remove by value
+    remove index 0 from numbers      # Remove by index
+    remove "banana" from fruits      # Remove by value
+    
+    # Collection utilities
+    sort numbers        # Sort in ascending order
+    reverse fruits      # Reverse the order
+    
+    # Iterate through collections
+    print Numbers in ArrayList:
+    for num in numbers:
+        print Number: {num}
+    
+    print Fruits in ArrayList:
+    for fruit in each fruits:
+        print Fruit: {fruit}
+    
+    # ===========================
+    # HASHMAP OPERATIONS
+    # ===========================
+    
+    """
+    HashMap - Key-value pairs
+    No duplicate keys, no guaranteed order
+    """
+    
+    # Create HashMap
+    ages as hashmap/int with hashmap
+    scores as hashmap/double
+    
+    # Add key-value pairs
+    put "Alice" with 25 in ages
+    put "Bob" with 30 in ages
+    put "Charlie" with 35 in ages
+    
+    put "Math" with 95.5 in scores
+    put "Science" with 87.0 in scores
+    put "English" with 92.3 in scores
+    
+    # Get values
+    aliceAge as int = get "Alice" from ages
+    mathScore as double = get "Math" from scores
+    
+    print Alice age: {aliceAge}
+    print Math score: {mathScore}
+    
+    # Check keys and values
+    print Has Alice: {contains "Alice" in ages}
+    print Has Chemistry: {has "Chemistry" in scores}
+    
+    # Update values
+    set "Alice" in ages to 26
+    set "Math" in scores to 98.0
+    
+    # Get map properties
+    print Map size: {size of ages}
+    print Is empty: {is empty scores}
+    
+    # Remove entries
+    remove "Bob" from ages
+    remove "English" from scores
+    
+    # Get all keys and values
+    print All people in ages map:
+    for person in keys of ages:
+        personAge as int = get person from ages
+        print {person}: {personAge}
+    
+    print All subjects in scores map:
+    for subject in values of scores:
+        print Subject score: {subject}
+    
+    # ===========================
+    # HASHSET OPERATIONS
+    # ===========================
+    
+    """
+    HashSet - Unique elements only
+    No duplicates, no guaranteed order
+    """
+    
+    # Create HashSet
+    uniqueNumbers as hashset/int with hashset
+    cities as hashset/string
+    
+    # Add elements (duplicates will be ignored)
+    add 10 to uniqueNumbers
+    add 20 to uniqueNumbers
+    add 10 to uniqueNumbers    # Duplicate - will be ignored
+    add 30 to uniqueNumbers
+    
+    append "New York" to cities
+    append "London" to cities
+    append "Tokyo" to cities
+    append "New York" to cities  # Duplicate - will be ignored
+    
+    # Check set properties
+    print Set size: {size of uniqueNumbers}   # Should be 3, not 4
+    print Cities count: {count of cities}     # Should be 3, not 4
+    
+    # Check membership
+    print Contains 20: {contains 20 in uniqueNumbers}
+    print Has Tokyo: {has "Tokyo" in cities}
+    print Has Paris: {contains "Paris" in cities}
+    
+    # Remove elements
+    remove 10 from uniqueNumbers
+    remove "London" from cities
+    
+    # Set operations (if supported)
+    moreNumbers as hashset/int
+    add 30 to moreNumbers
+    add 40 to moreNumbers
+    add 50 to moreNumbers
+    
+    # Iterate through set
+    print Unique numbers:
+    for num in uniqueNumbers:
+        print Unique: {num}
+    
+    print Cities:
+    for city in each cities:
+        print City: {city}
+    
+    # ===========================
+    # LINKEDLIST OPERATIONS
+    # ===========================
+    
+    """
+    LinkedList - Doubly-linked list
+    Good for frequent insertions/deletions
+    """
+    
+    # Create LinkedList
+    tasks as linkedlist/string with linkedlist
+    priorities as linkedlist/int
+    
+    # Add elements
+    add "Task 1" to tasks
+    add "Task 2" to tasks
+    append "Task 3" to tasks
+    
+    add 1 to priorities
+    add 2 to priorities
+    add 3 to priorities
+    
+    # Add at beginning and end
+    add first "Urgent Task" to tasks
+    add last "Final Task" to tasks
+    
+    push 0 to priorities      # Add to beginning
+    append 4 to priorities    # Add to end
+    
+    # Access elements
+    firstTask as string = get first from tasks
+    lastTask as string = get last from tasks
+    
+    print First task: {firstTask}
+    print Last task: {lastTask}
+    
+    # Remove from ends
+    removedFirst as string = pop first from tasks
+    removedLast as string = pop last from tasks
+    
+    print Removed first: {removedFirst}
+    print Removed last: {removedLast}
+    
+    # Check properties
+    print LinkedList size: {size of tasks}
+    print Contains Task 2: {contains "Task 2" in tasks}
+    
+    # ===========================
+    # QUEUE OPERATIONS
+    # ===========================
+    
+    """
+    Queue - FIFO (First In, First Out)
+    Using ArrayDeque implementation
+    """
+    
+    # Create Queue
+    queue as queue/string with queue
+    numberQueue as queue/int
+    
+    # Enqueue (add to rear)
+    enqueue "First" to queue
+    enqueue "Second" to queue
+    enqueue "Third" to queue
+    
+    offer 100 to numberQueue
+    offer 200 to numberQueue
+    offer 300 to numberQueue
+    
+    # Peek (look at front without removing)
+    frontItem as string = peek queue
+    frontNumber as int = peek numberQueue
+    
+    print Front of queue: {frontItem}
+    print Front number: {frontNumber}
+    
+    # Dequeue (remove from front)
+    removed as string = dequeue from queue
+    polled as int = poll from numberQueue
+    
+    print Dequeued: {removed}
+    print Polled: {polled}
+    
+    # Check queue properties
+    print Queue size: {size of queue}
+    print Is empty: {is empty numberQueue}
+    
+    # ===========================
+    # STACK OPERATIONS
+    # ===========================
+    
+    """
+    Stack - LIFO (Last In, First Out)
+    """
+    
+    # Create Stack
+    stack as stack/string with stack
+    numberStack as stack/int
+    
+    # Push (add to top)
+    push "Bottom" to stack
+    push "Middle" to stack
+    push "Top" to stack
+    
+    push 10 to numberStack
+    push 20 to numberStack
+    push 30 to numberStack
+    
+    # Peek (look at top without removing)
+    topItem as string = peek stack
+    topNumber as int = peek numberStack
+    
+    print Top of stack: {topItem}
+    print Top number: {topNumber}
+    
+    # Pop (remove from top)
+    popped as string = pop from stack
+    poppedNum as int = pop from numberStack
+    
+    print Popped: {popped}
+    print Popped number: {poppedNum}
+    
+    # Check stack properties
+    print Stack size: {size of stack}
+    print Is empty: {is empty numberStack}
+    
+    # ===========================
+    # TREESET OPERATIONS
+    # ===========================
+    
+    """
+    TreeSet - Sorted set implementation
+    Maintains elements in sorted order
+    """
+    
+    # Create TreeSet
+    sortedNumbers as treeset/int with treeset
+    sortedWords as treeset/string
+    
+    # Add elements (will be automatically sorted)
+    add 30 to sortedNumbers
+    add 10 to sortedNumbers
+    add 20 to sortedNumbers
+    add 5 to sortedNumbers
+    
+    add "zebra" to sortedWords
+    add "apple" to sortedWords
+    add "banana" to sortedWords
+    add "cherry" to sortedWords
+    
+    # Access sorted elements
+    print Sorted numbers:
+    for num in sortedNumbers:
+        print Sorted: {num}    # Will print: 5, 10, 20, 30
+    
+    print Sorted words:
+    for word in each sortedWords:
+        print Word: {word}     # Will print in alphabetical order
+    
+    # Get first and last in sorted order
+    print First number: {first in sortedNumbers}
+    print Last word: {last in sortedWords}
+    
+    # ===========================
+    # UTILITY OPERATIONS
+    # ===========================
+    
+    # Create a test list for utilities
+    testList as arraylist/int
+    add 5 to testList
+    add 2 to testList
+    add 8 to testList
+    add 1 to testList
+    add 9 to testList
+    
+    print Original list:
+    for num in testList:
+        print {num}
+    
+    # Sort the list
+    sort testList
+    print Sorted list:
+    for num in testList:
+        print {num}
+    
+    # Reverse the list
+    reverse testList
+    print Reversed list:
+    for num in testList:
+        print {num}
+    
+    # Shuffle the list
+    shuffle testList
+    print Shuffled list:
+    for num in testList:
+        print {num}
+    
+    # Clear all collections
+    clear numbers
+    clear fruits
+    clear ages
+    clear uniqueNumbers
+    clear tasks
+    
+    print After clearing:
+    print Numbers size: {size of numbers}
+    print Fruits size: {size of fruits}
+    print Ages size: {size of ages}
+    
+    print Collection operations test completed!

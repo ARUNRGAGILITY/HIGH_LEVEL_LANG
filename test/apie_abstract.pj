@@ -1,0 +1,8 @@
+// Abstract class with inheritance
+must-do template Animal
+    instance vars:
+        - name as string
+    must-do methods:
+        * makeSound() returns string
+
+

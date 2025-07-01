@@ -1,0 +1,9 @@
+// Multiple inheritance
+template Eagle extends Animal implements Flyable
+    instance methods:
+        * makeSound() returns string
+            return "Screech!"
+        * fly() returns string
+            return "Soaring"
+main
+    print Polymorphism
