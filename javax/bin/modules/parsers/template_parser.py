@@ -66,6 +66,12 @@ class TemplateParser:
                 i += 1
                 continue
             
+            # Handle standalone 'main' without colon as a section
+            if line == 'main' and self._get_indentation(original_line) == 4:
+                current_section = 'main'
+                i += 1
+                continue
+            
             # Parse based on current section
             i = self._parse_section_content(
                 lines, i, current_section, template, original_line
@@ -181,6 +187,25 @@ class TemplateParser:
             getter_setter, i = self._parse_getter_setter(lines, i)
             if getter_setter:
                 template.getters_setters.append(getter_setter)
+        elif current_section == 'main':
+            # Handle main method within template - this is the key fix!
+            from parsers.statement_parser import StatementParser
+            statement_parser = StatementParser(self.synonym_config, self.type_mapping)
+            
+            # Parse main method body and store it in template
+            main_body, i = statement_parser.parse_method_body(lines, i)
+            
+            # Create a special main method and add it to template methods
+            main_method = Method(
+                name="main",
+                parameters=[("args", "String[]")],
+                return_type="void",
+                access=AccessModifier.PUBLIC,
+                body=main_body,
+                is_static=True,
+                is_constructor=False
+            )
+            template.template_methods.append(main_method)
         else:
             i += 1
         

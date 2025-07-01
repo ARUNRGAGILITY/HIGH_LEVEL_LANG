@@ -3,9 +3,10 @@ template LaunchCalculator
 main
     a as double with 10.53
     b as double with 3.2
+    c as float with 22.44f
     
     print Calculator Demo:
-    print a = {a}, b = {b}
+    print a = {a}, b = {b}, c = {c}
     
     var sum = Calculator.add(a, b)
     var diff = Calculator.subtract(a, b)

@@ -1,0 +1,20 @@
+template MethodWithParams
+    template vars:
+
+    template methods:
+
+    instance vars:
+        - make as string with ""
+        - model as string with ""
+    instance methods:
+        * checkMethod(make) returns string
+            return make + " Checked!"
+        setters and getters:
+            * make
+            * model
+    constructor:
+        * make, model:
+
+main
+    print MethodWithParams Checking
+    create mwp as MethodWithParams with "Toyota", "2025"

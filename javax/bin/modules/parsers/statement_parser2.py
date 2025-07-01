@@ -52,7 +52,7 @@ class StatementParser:
             # If line is not indented enough, we've reached the end of the method
             if current_indent < expected_indent:
                 break
-            
+                
             # Check if we need to close braces due to decreased indentation
             while indent_stack and current_indent <= indent_stack[-1]:
                 body.append('}')
@@ -82,6 +82,10 @@ class StatementParser:
         """Convert a pseudo-Java statement to Java"""
         statement = statement.strip()
         
+        # FIRST: Check for variable declarations - MUST include both 'with' and '=' checks
+        if self._is_variable_declaration(statement):
+            return self._convert_variable_declaration(statement)
+        
         # Handle object creation with natural language
         for verb in self.synonym_config.object_creation_verbs:
             # Pattern: create alice as Student with "args"
@@ -107,10 +111,6 @@ class StatementParser:
             return self._convert_fstring_print(statement)
         elif statement.startswith('print '):
             return self._convert_simple_print(statement)
-        
-        # Handle variable declarations
-        if ' as ' in statement and (' with ' in statement or '=' in statement) and not any(op in statement for op in ['==', '!=', '<=', '>=']):
-            return self._convert_variable_declaration(statement)
         
         # Handle simple assignments
         if '=' in statement and not any(op in statement for op in ['==', '!=', '<=', '>=']):
@@ -139,6 +139,73 @@ class StatementParser:
             return statement + ';'
         
         return statement
+    
+    def _is_variable_declaration(self, statement: str) -> bool:
+        """Check if statement is a variable declaration - FIXED to handle 'with' syntax"""
+        # Check for var syntax first
+        if statement.startswith('var '):
+            return True
+        
+        # Check for 'name as type' syntax
+        if ' as ' in statement:
+            # Check for 'with' syntax: "a as double with 10.53"
+            if ' with ' in statement:
+                return True
+            # Check for '=' syntax: "a as double = 10.53"  
+            if '=' in statement and not any(op in statement for op in ['==', '!=', '<=', '>=']):
+                return True
+        
+        return False
+    
+    def _convert_variable_declaration(self, statement: str) -> str:
+        """Convert variable declaration with explicit syntax"""
+        
+        if statement.startswith('var '):
+            # Handle var syntax: var name = value (type inference from value)
+            var_content = statement[4:].strip()  # Remove 'var '
+            if ' = ' in var_content:
+                name, value = var_content.split(' = ', 1)
+                name = name.strip()
+                value = value.strip()
+                return f"var {name} = {value};"
+            else:
+                raise PseudoJavaError(f"Variable declaration '{statement}' with 'var' requires initialization. "
+                                   f"Use 'var name = value'")
+        elif ' as ' in statement:
+            # Handle both 'with' and '=' syntax
+            var_part = statement
+            value = None
+            
+            if ' with ' in statement:
+                var_part, value = statement.split(' with ', 1)
+                var_part = var_part.strip()
+                value = value.strip()
+            elif ' = ' in statement:
+                var_part, value = statement.split(' = ', 1)
+                var_part = var_part.strip()
+                value = value.strip()
+            
+            if ' as ' in var_part:
+                name_part, type_part = var_part.split(' as ', 1)
+                name = name_part.strip()
+                type_ = type_part.strip()
+                
+                # Handle collection syntax
+                java_type, final_value = self._process_collection_type_in_declaration(type_, value)
+                
+                if final_value:
+                    return f"{java_type} {name} = {final_value};"
+                else:
+                    return f"{java_type} {name};"
+            else:
+                raise PseudoJavaError(f"Variable declaration '{statement}' must use 'name as type' syntax.")
+        
+        else:
+            # Old syntax - require explicit types
+            if '=' in statement and not any(op in statement for op in ['==', '!=', '<=', '>=']):
+                raise PseudoJavaError(f"Variable declaration '{statement}' must use explicit type syntax. "
+                                   f"Use 'name as type = value' instead of implicit typing")
+            return statement + ';'
     
     def _convert_simple_print(self, statement: str) -> str:
         """Convert simple print syntax"""
@@ -195,32 +262,6 @@ class StatementParser:
         
         content = match.group(1)
         return self._convert_interpolated_print(content)
-    
-    def _convert_variable_declaration(self, statement: str) -> str:
-        """Convert variable declaration with explicit syntax"""
-        if ' as ' in statement:
-            if ' = ' in statement:
-                var_part, value = statement.split(' = ', 1)
-            elif ' with ' in statement:
-                var_part, value = statement.split(' with ', 1)
-            else:
-                var_part = statement.strip()
-                value = None
-            
-            if ' as ' in var_part:
-                name_part, type_part = var_part.split(' as ', 1)
-                name = name_part.strip()
-                type_ = type_part.strip()
-                
-                # Handle collection syntax
-                java_type, final_value = self._process_collection_type_in_declaration(type_, value)
-                
-                if final_value:
-                    return f"{java_type} {name} = {final_value};"
-                else:
-                    return f"{java_type} {name};"
-        
-        return statement + ';'
     
     def _process_collection_type_in_declaration(self, type_: str, value: str) -> Tuple[str, str]:
         """Process collection types in variable declarations"""

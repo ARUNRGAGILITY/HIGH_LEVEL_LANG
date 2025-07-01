@@ -1,0 +1,8 @@
+program TestVar
+
+main
+    a as double with 10.53
+    b as double with 3.2
+    var sum = 5.0
+    print a = {a}, b = {b}
+    print sum = {sum}

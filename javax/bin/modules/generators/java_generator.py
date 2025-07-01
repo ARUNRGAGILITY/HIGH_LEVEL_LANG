@@ -48,9 +48,13 @@ class JavaCodeGenerator:
     
     def _should_merge_into_single_class(self, parsed_data: ParsedProgram) -> bool:
         """Determine if template should be merged with main method"""
-        return (len(parsed_data.templates) == 1 and 
-                parsed_data.templates[0].name == parsed_data.program_name and 
-                parsed_data.main_method_body)
+        if len(parsed_data.templates) == 1:
+            template = parsed_data.templates[0]
+            # Check if template has a main method OR if there's a standalone main method
+            has_main_in_template = any(method.name == "main" for method in template.template_methods)
+            return (template.name == parsed_data.program_name and 
+                   (parsed_data.main_method_body or has_main_in_template))
+        return False
     
     def _generate_single_class_with_main(self, parsed_data: ParsedProgram) -> List[str]:
         """Generate a single class containing everything including main method"""

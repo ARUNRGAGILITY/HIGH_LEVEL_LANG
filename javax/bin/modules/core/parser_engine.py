@@ -55,6 +55,13 @@ class PseudoJavaParser:
             if self._extract_template_name_from_line(line):
                 template, i = self.template_parser.parse_template(lines, i)
                 templates.append(template)
+                
+                # Check if template contains a main method - if so, don't parse standalone main
+                has_main_in_template = any(method.name == "main" for method in template.template_methods)
+                if has_main_in_template:
+                    # Skip any standalone main method since it's already in the template
+                    continue
+                    
             elif line == 'main':
                 main_method_body, i = self._parse_main_method(lines, i + 1)
             elif line.startswith('method '):
@@ -116,7 +123,7 @@ class PseudoJavaParser:
         return match.group(1) if match else "DefaultProgram"
     
     def _parse_main_method(self, lines: List[str], start_idx: int) -> Tuple[List[str], int]:
-        """Parse main method body"""
+        """Parse main method body using the statement parser"""
         return self.statement_parser.parse_method_body(lines, start_idx)
     
     def _get_indentation(self, line: str) -> int:
